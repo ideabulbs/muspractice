@@ -156,7 +156,7 @@ class TextInterface(object):
 	def edit_phrase(self, phrase_id):
 		phrase = self.dbh.get_phrase_by_id(phrase_id)
 		metronome_setups = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
-		if not phrase and not metronome_setup:
+		if not phrase and not metronome_setups:
 			print "No phrase or metronome found"
 			return False
 		tempfile = '%sdata_%.2f.ini' % (Config.TEMPORARY_DIRECTORY, time.time())

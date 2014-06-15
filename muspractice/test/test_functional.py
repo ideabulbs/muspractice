@@ -15,10 +15,11 @@ class FunctionalBase(Helper):
         dbh = DatabaseHandler(cls.dbfile)
         dbh.init_database()
 
-        phrase1 = cls._create_phrase()
-        phrase2 = cls._create_phrase()
-        phrase3 = cls._create_phrase()
-        phrases = [phrase1, phrase2, phrase3]
+        phrase_count = 10
+        phrases = []
+        for _ in range(phrase_count):
+            phrase = cls._create_phrase()
+            phrases.append(phrase)
 
         # import data to the database
         delta = 1
@@ -52,11 +53,11 @@ class FunctionalBase(Helper):
         stdout, stderr = popen.communicate()
         if popen.returncode != 0:
                 print stderr
-                raise RuntimeError("pypractice ended with an unexpected error code: %d" % popen.returncode)
+                raise RuntimeError("muspractice ended with an unexpected error code: %d" % popen.returncode)
         return stdout, stderr
 
     def reschedule(self, phrase_id, grade):
-        cmd = "./pypractice -d %s -r %s" % (self.dbfile, phrase_id)
+        cmd = "./muspractice -d %s -r %s" % (self.dbfile, phrase_id)
         popen = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
         popen.stdin.write(grade)
         stdout, stderr = popen.communicate()
