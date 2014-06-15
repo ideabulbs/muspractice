@@ -1,0 +1,399 @@
+<?xml version="1.0" ?>
+<PyPracticeData>
+	<Phrases>
+		<Phrase>
+			<Filename>/nas/music/rmusic/ME-work-song.mp3</Filename>
+			<FromPosition>2.0000</FromPosition>
+			<ToPosition>46.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Melody</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Rage-2009/CD 1/12 - Rage - The Trooper (Iron Maiden cover).mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>240.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>80</Speed>
+			<Pitch>2</Pitch>
+			<Comment>Entire song</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Rage-2009/CD 1/12 - Rage - The Trooper (Iron Maiden cover).mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>11.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>80</Speed>
+			<Pitch>2</Pitch>
+			<Comment>Intro</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Rage-2009/CD 1/12 - Rage - The Trooper (Iron Maiden cover).mp3</Filename>
+			<FromPosition>10.0000</FromPosition>
+			<ToPosition>34.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>80</Speed>
+			<Pitch>2</Pitch>
+			<Comment>Intro main riff</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/rock/deep-purple/1974 - Burn/01 - Burn.mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>365.2800</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Entire song</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/funk/Tower Of Power-17 cd/Tower Of Power-Ain't Nothin' Stoppin' Us Now-1976/06 - You Ought To Be Havin' Fun.Mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>186.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>82</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Entire song</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/funk/Tower Of Power-17 cd/Tower Of Power-Ain't Nothin' Stoppin' Us Now-1976/06 - You Ought To Be Havin' Fun.Mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>18.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>91</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Intro</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/funk/Tower Of Power-17 cd/Tower Of Power-Ain't Nothin' Stoppin' Us Now-1976/06 - You Ought To Be Havin' Fun.Mp3</Filename>
+			<FromPosition>17.0000</FromPosition>
+			<ToPosition>56.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>88</Speed>
+			<Pitch>0</Pitch>
+			<Comment>2 verses in C</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/funk/Tower Of Power-17 cd/Tower Of Power-Ain't Nothin' Stoppin' Us Now-1976/06 - You Ought To Be Havin' Fun.Mp3</Filename>
+			<FromPosition>161.0000</FromPosition>
+			<ToPosition>179.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>82</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Ending riff</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Rage-2009/CD 1/12 - Rage - The Trooper (Iron Maiden cover).mp3</Filename>
+			<FromPosition>55.5000</FromPosition>
+			<ToPosition>69.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>85</Speed>
+			<Pitch>2</Pitch>
+			<Comment>Oooh</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Rage-2009/CD 1/12 - Rage - The Trooper (Iron Maiden cover).mp3</Filename>
+			<FromPosition>124.5000</FromPosition>
+			<ToPosition>171.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>80</Speed>
+			<Pitch>2</Pitch>
+			<Comment>Guitar solo</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Rage-2009/CD 1/12 - Rage - The Trooper (Iron Maiden cover).mp3</Filename>
+			<FromPosition>124.0000</FromPosition>
+			<ToPosition>171.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>70</Speed>
+			<Pitch>2</Pitch>
+			<Comment>Guitar solo</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/rock/deep-purple/1974 - Burn/01 - Burn.mp3</Filename>
+			<FromPosition>136.0000</FromPosition>
+			<ToPosition>169.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>85</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Guitar solo part 1</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/rock/deep-purple/1974 - Burn/01 - Burn.mp3</Filename>
+			<FromPosition>168.0000</FromPosition>
+			<ToPosition>197.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>88</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Guitar solo part 2</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/rock/deep-purple/1974 - Burn/01 - Burn.mp3</Filename>
+			<FromPosition>20.0000</FromPosition>
+			<ToPosition>47.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Verse 1</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/rock/deep-purple/1974 - Burn/01 - Burn.mp3</Filename>
+			<FromPosition>46.0000</FromPosition>
+			<ToPosition>56.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>82</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Is buuurn...</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/jazz/jaco-pastorius/sound/01-Jaco Pastorius/01-Jaco Pastorius (1976)/02-Come On, Come Over.mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>230.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Entire song</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/jazz/jaco-pastorius/sound/01-Jaco Pastorius/01-Jaco Pastorius (1976)/02-Come On, Come Over.mp3</Filename>
+			<FromPosition>4.0000</FromPosition>
+			<ToPosition>56.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Main riff</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/jazz/jaco-pastorius/sound/01-Jaco Pastorius/01-Jaco Pastorius (1976)/02-Come On, Come Over.mp3</Filename>
+			<FromPosition>54.0000</FromPosition>
+			<ToPosition>79.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>80</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Chorus 1</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/jazz/jaco-pastorius/sound/01-Jaco Pastorius/01-Jaco Pastorius (1976)/02-Come On, Come Over.mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>4.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>73</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Intro</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/rmusic/little-wing.ogg</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>140.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Entire song</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/rock/Led Zeppelin/2008 - 10CD [1969-1982] {Japanese SHM-CD edition}/1971 - Led Zeppelin IV/02. Rock And Roll.mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>220.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100.0</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Entire song</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/rock/Led Zeppelin/2008 - 10CD [1969-1982] {Japanese SHM-CD edition}/1971 - Led Zeppelin IV/02. Rock And Roll.mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>25.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Intro</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/rock/Led Zeppelin/2008 - 10CD [1969-1982] {Japanese SHM-CD edition}/1971 - Led Zeppelin IV/02. Rock And Roll.mp3</Filename>
+			<FromPosition>23.0000</FromPosition>
+			<ToPosition>93.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>2 verses</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/rock/Led Zeppelin/2008 - 10CD [1969-1982] {Japanese SHM-CD edition}/1971 - Led Zeppelin IV/02. Rock And Roll.mp3</Filename>
+			<FromPosition>90.0000</FromPosition>
+			<ToPosition>143.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Guitar solo</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/rock/deep-purple/1974 - Burn/01 - Burn.mp3</Filename>
+			<FromPosition>107.0000</FromPosition>
+			<ToPosition>128.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>You know we had the time</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Annihilator [rutracker.org]/01 - Albums/1994 - King Of The Kill (Limited Digipack Edition 2002 with bonus tracks)/09 - Speed.mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>275.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>85</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Entire song</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Annihilator [rutracker.org]/01 - Albums/1994 - King Of The Kill (Limited Digipack Edition 2002 with bonus tracks)/09 - Speed.mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>16.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Intro</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Annihilator [rutracker.org]/01 - Albums/1994 - King Of The Kill (Limited Digipack Edition 2002 with bonus tracks)/09 - Speed.mp3</Filename>
+			<FromPosition>16.0000</FromPosition>
+			<ToPosition>34.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>80</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Intro fast riff</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Annihilator [rutracker.org]/01 - Albums/1994 - King Of The Kill (Limited Digipack Edition 2002 with bonus tracks)/09 - Speed.mp3</Filename>
+			<FromPosition>32.0000</FromPosition>
+			<ToPosition>42.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>77</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Pre-verse riff</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Annihilator [rutracker.org]/01 - Albums/1994 - King Of The Kill (Limited Digipack Edition 2002 with bonus tracks)/09 - Speed.mp3</Filename>
+			<FromPosition>40.0000</FromPosition>
+			<ToPosition>58.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>80</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Verse 1</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Annihilator [rutracker.org]/01 - Albums/1994 - King Of The Kill (Limited Digipack Edition 2002 with bonus tracks)/09 - Speed.mp3</Filename>
+			<FromPosition>56.0000</FromPosition>
+			<ToPosition>73.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>83</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Chorus</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Annihilator [rutracker.org]/01 - Albums/1994 - King Of The Kill (Limited Digipack Edition 2002 with bonus tracks)/09 - Speed.mp3</Filename>
+			<FromPosition>113.0000</FromPosition>
+			<ToPosition>130.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>81</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Go...</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Annihilator [rutracker.org]/01 - Albums/1994 - King Of The Kill (Limited Digipack Edition 2002 with bonus tracks)/09 - Speed.mp3</Filename>
+			<FromPosition>129.0000</FromPosition>
+			<ToPosition>140.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>83</Speed>
+			<Pitch>0</Pitch>
+			<Comment>I know exactly what I'm after</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/public/torrents/music/metal/Annihilator [rutracker.org]/01 - Albums/1994 - King Of The Kill (Limited Digipack Edition 2002 with bonus tracks)/09 - Speed.mp3</Filename>
+			<FromPosition>145.0000</FromPosition>
+			<ToPosition>163.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>82</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Guitar solo 2nd riff</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/home/arilou649/remoteSync/music/education/soul-jazz-hal-leonard/mercy-mercy-mercy-no-melody.mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>173.1900</ToPosition>
+			<Loop>True</Loop>
+			<Speed>83</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Entire song no melody</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/home/arilou649/remoteSync/music/education/soul-jazz-hal-leonard/mercy-mercy-mercy-no-melody.mp3</Filename>
+			<FromPosition>53.0000</FromPosition>
+			<ToPosition>107.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>104</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Middle solo</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/rmusic/aebersold-01/03-Fm_Ebm_Dm_4_Bars_Each.mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>207.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Entire song no melody</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/rmusic/aebersold-01/10-24-measure-song.mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>234.7900</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Cmaj7 |   %  | Ab7 |  % |
+Dm7 |  G7 | Cmaj7 | C7 |
+
+Fmaj7 | % | Db7 | Db7 |
+D7 | D7 | Dm7 | G7 |
+
+Cmaj7 | % | Ab7 | % |
+Dm7 | G7 | Cmaj7 | G 7 |</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/funk/Tower Of Power-17 cd/Tower Of Power-Ain't Nothin' Stoppin' Us Now-1976/07 - Can't Stand To See The Slaughter.Mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>167.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Entire song</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/funk/Tower Of Power-17 cd/Tower Of Power-Ain't Nothin' Stoppin' Us Now-1976/07 - Can't Stand To See The Slaughter.Mp3</Filename>
+			<FromPosition>137.0000</FromPosition>
+			<ToPosition>167.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Ending</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/education/soul-jazz-hal-leonard/track09.cdda.wav.mp3</Filename>
+			<FromPosition>14.0000</FromPosition>
+			<ToPosition>72.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Jive Samba: Melody</Comment>
+		</Phrase>
+		<Phrase>
+			<Filename>/nas/music/education/soul-jazz-hal-leonard/track09.cdda.wav.mp3</Filename>
+			<FromPosition>0.0000</FromPosition>
+			<ToPosition>243.0000</ToPosition>
+			<Loop>True</Loop>
+			<Speed>100</Speed>
+			<Pitch>0</Pitch>
+			<Comment>Jive Samba: Entire song</Comment>
+		</Phrase>
+	</Phrases>
+</PyPracticeData>

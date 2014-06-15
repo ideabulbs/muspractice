@@ -1,0 +1,348 @@
+#!/usr/bin/python
+import gst
+import os
+import time
+import datetime
+import random
+import ConfigParser
+from optparse import OptionParser
+import tools.Pipeline
+from models.dbhandler import *
+from models.Schedule import *
+from models.Scheduler import *
+from models.Repetition import *
+from models.MetronomeSetup import *
+from models.IniSerializator import *
+from tools.Metronome import *
+from config.config import Config
+
+import gobject
+gobject.threads_init()
+
+
+class TextInterface(object):
+	def __init__(self, database):
+		self.dbh = DatabaseHandler(database)
+		
+	def list_phrases(self):
+		phrases = self.dbh.get_phrases(orderby='id')
+		for phrase in phrases:
+			print phrase.id, '\t', phrase.get_filename(path=False), "\t", phrase.get_comment().split(os.linesep)[0], "\t", phrase.get_tagline()
+
+	def play_phrase(self, phrase_id):
+		phrase = self.dbh.get_phrase_by_id(phrase_id)
+		metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
+		if not metronomes:
+			print "No metronome found for the given phrase!"
+			return
+		metronome = metronomes[0]
+		#sys.exit(1)
+
+		if phrase.get_image():
+			print phrase.get_image()
+		
+		if phrase.get_filename():
+			sink = gst.parse_bin_from_description(Config.AUDIOSINK, True)
+			player = tools.Pipeline.Pipeline(sink)
+			if phrase.get_filename().startswith(os.sep):
+				uri = 'file://' + phrase.get_filename()
+			else:
+				uri = 'file://%s%s' % (Config.MUSIC_DIRECTORY, phrase.get_filename())
+			player.reset()
+			player.pause()
+			player.set_file(uri)
+
+			player.set_from_position(phrase.get_from_position())
+			player.set_to_position(phrase.get_to_position())
+
+			speed = phrase.get_speed()
+			if speed > 0:
+				speed = speed / 100.0
+			else:
+				speed = 1.0
+			player.set_speed(speed)
+			
+			if phrase.get_pitch():
+				player.set_pitch(2**(phrase.get_pitch()/12.0))
+
+			player.set_loop(True)
+			player.play()
+			duration = 0
+			repetition = 1
+			print "Duration: %d" % metronome.duration
+			while True:
+				position = player.get_position()
+				if not position:
+					continue
+				if position < player.get_from_position() or position > player.get_to_position():
+					if duration > metronome.duration:
+						break
+					print "Repetition %d" % repetition
+					player.seek(player.get_from_position())
+					repetition += 1
+				duration += 1
+				time.sleep(1)
+			player.pause()
+
+	def show_phrase(self, phrase_id):
+		phrase = self.dbh.get_phrase_by_id(phrase_id)
+		if phrase:
+			print
+			print "File: %s" % phrase.get_filename()
+			if phrase.get_image():
+				print "Image: %s" % phrase.get_image()
+			if phrase.get_tagline():
+				print "Tags: %s" % phrase.get_tagline()
+			print "From: %.2f" % phrase.get_from_position()
+			print "To: %.2f" % phrase.get_to_position()
+			print
+			print phrase.get_comment()
+		else:
+			"Phrase not found. Wrong id?"
+		metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
+		if metronomes:
+			ms = metronomes[0]
+			print "Metronome: speed=%d; meter=%d; duration=%d; increment=%d" % (ms.speed, ms.meter, ms.duration, ms.increment)
+
+	def reschedule_phrase(self, phrase_id):
+		phrase = self.dbh.get_phrase_by_id(phrase_id)
+		if not phrase:
+			print "No phrase found with the given id: %d" % phrase_id
+			return
+		repetitions = self.dbh.get_repetitions_by_phrase_id(phrase_id)
+		scheduler = Scheduler()
+		while True:
+			user_input = raw_input("Enter new grade (0-5): ")
+			try:
+				grade = int(user_input)
+				break
+			except:
+				continue
+		current_repetition = Repetition()
+		current_repetition.set_date(datetime.date.today())
+		current_repetition.set_grade(grade)
+		current_repetition.set_phrase_id(phrase.id)
+
+		self.dbh.insert_repetition(current_repetition)
+
+		past_schedules = self.dbh.get_schedules_by_phrase_id(phrase_id)
+		if past_schedules:
+			for schedule in past_schedules:
+				if not self.dbh.remove_schedule(schedule):
+					print "Failed to remove old schedule: %d" % (schedule.id)
+		
+		schedule = scheduler.get_new_schedule(phrase, grade, repetition_list=repetitions)
+		print "Next repetition: %s" % schedule.get_next_repetition()
+		self.dbh.insert_schedule(schedule)
+
+		metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
+		if metronomes:
+			ms = metronomes[0]
+			if ms.increment:
+				ms.speed += ms.increment
+			if not self.dbh.update_metronome_setup(ms):
+				print "Failed to update the metronome setup"
+	
+	def show_todo_list(self):
+		schedules = self.dbh.get_active_schedules(orderby="next_repetition")
+		schedules.reverse()
+		for schedule in schedules:
+			phrase = self.dbh.get_phrase_by_id(schedule.get_phrase_id())
+			if not phrase:
+				print "Inconsistent database!"
+				return
+			print phrase.id, "\t", schedule.get_next_repetition(), "\t", phrase.get_filename(path=False), phrase.get_short_description(), "\t", phrase.get_tagline()
+
+	def edit_phrase(self, phrase_id):
+		phrase = self.dbh.get_phrase_by_id(phrase_id)
+		metronome_setups = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
+		if not phrase and not metronome_setup:
+			print "No phrase or metronome found"
+			return False
+		tempfile = '%sdata_%.2f.ini' % (Config.TEMPORARY_DIRECTORY, time.time())
+
+		if not metronome_setups:
+			metronome_setup = MetronomeSetup()
+			metronome_setup.phrase_id = phrase_id
+			metronome_setup.speed = 100
+			metronome_setup.meter = 4
+			metronome_setup.duration = 300
+			metronome_setup.increment = 0
+			ms_id = self.dbh.insert_metronome_setup(metronome_setup)
+			metronome_setup.id = ms_id
+		else:
+			metronome_setup = metronome_setups[0]
+		pis = IniSerializator(tempfile, phrase=phrase, metronome_setup=metronome_setup)
+		if not pis.write():
+			print "Unable to write temporary file: %s" % tempfile
+			return
+		if not 'EDITOR' in os.environ:
+			print "Can't find suitable editor. Set the EDITOR environment variable!"
+		else:
+			os.system("%s %s" % (os.environ['EDITOR'], tempfile))
+		updated_result = pis.read()
+		updated_phrase = updated_result['Phrase']
+		updated_metronome_setup = updated_result['MetronomeSetup']
+		if updated_phrase:
+			if not self.dbh.update_phrase(updated_phrase):
+				print "Can't update the phrase"
+			else:
+				print "Phrase updated"
+		if updated_metronome_setup:
+			if not self.dbh.update_metronome_setup(updated_metronome_setup):
+				print "Can't update the metronome setup"
+			else:
+				print "Metronome setup updated"			
+		os.unlink(tempfile)
+		return True
+			
+	def delete_phrase(self, phrase_id):
+		phrase = self.dbh.get_phrase_by_id(phrase_id)
+		if not phrase:
+			print "No phrase found with the given id: %d" % phrase_id
+			return
+		if not self.dbh.remove_phrase(phrase):
+			print "Error occured while removing the phrase"
+		else:
+			print "Phrase removed: %s %s" % (phrase.get_filename(path=False), phrase.get_short_description())
+
+	def create_phrase(self):
+		phrase = Phrase()
+		phrase_id = self.dbh.insert_phrase(phrase)
+		if not phrase_id:
+			print "Failed to add phrase to database"
+			return
+		schedule = Schedule()
+		schedule.set_phrase_id(phrase_id)
+		schedule.set_next_repetition(datetime.date.today())
+		schedule_id = self.dbh.insert_schedule(schedule)
+		if not schedule_id:
+			print "Failed to schedule the new phrase"
+			return
+		metronome_setup = MetronomeSetup()
+		metronome_setup.phrase_id = phrase_id
+		metronome_setup.speed = 100
+		metronome_setup.meter = 4
+		metronome_setup.duration = 300
+		metronome_setup.increment = 2
+		metronome_setup_id = self.dbh.insert_metronome_setup(metronome_setup)
+		if not metronome_setup_id:
+			print "Failed to insert metronome setup"
+			return
+		self.edit_phrase(phrase_id)
+
+	def deactivate_phrase(self, phrase_id):
+		phrase = self.dbh.get_phrase_by_id(phrase_id)
+		if not phrase_id:
+			print "Failed to deactivate phrase: the given phrase is not found"
+			return
+
+		past_schedules = self.dbh.get_schedules_by_phrase_id(phrase_id)
+		if past_schedules:
+			for schedule in past_schedules:
+				if not self.dbh.remove_schedule(schedule):
+					print "Failed to remove old schedule: %d" % (schedule.id)
+
+		schedule = Schedule()
+		schedule.set_phrase_id(phrase_id)
+		schedule.set_next_repetition(datetime.date(1970, 1, 1))
+		schedule_id = self.dbh.insert_schedule(schedule)
+		if not schedule_id:
+			print "Failed to deactivate phrase id %d" % phrase_id
+			return
+
+	def list_deactivated_phrases(self):
+		schedules = self.dbh.get_inactive_schedules(orderby="next_repetition")
+		schedules.reverse()
+		for schedule in schedules:
+			phrase = self.dbh.get_phrase_by_id(schedule.get_phrase_id())
+			if not phrase:
+				print "Inconsistent database!"
+				return
+			print phrase.id, "\t", "DEACTIVATED", "\t", phrase.get_filename(path=False), phrase.get_short_description(), "\t", phrase.get_tagline(), '.'
+
+	def init_database(self):
+		self.dbh.init_database()
+
+	def play_metronome(self, phrase_id):
+		phrase = self.dbh.get_phrase_by_id(phrase_id)
+		if not phrase:
+			print "No phrase found with the given id: %d" % phrase_id
+			return
+		metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
+		if not metronomes:
+			print "No metronome found for the given phrase!"
+			return
+		ms = metronomes[0]
+		
+		m = Metronome()
+		m.set_speed(ms.speed)
+		print "Metronome tempo: %d" % ms.speed
+		m.set_duration(ms.duration)
+		m.start()
+		time.sleep(ms.duration)
+
+	def list_repetitions(self):
+		repetitions = self.dbh.get_repetitions()
+		for repetition in repetitions:
+			phrase = self.dbh.get_phrase_by_id(repetition.get_phrase_id())
+			print repetition.id, repetition.get_date(), repetition.get_grade(), phrase.get_filename(path=False), phrase.get_short_description()
+
+	def list_metronome_setups(self):
+		metronome_setups = self.dbh.get_metronome_setups()
+		for metronome_setup in metronome_setups:
+			phrase = self.dbh.get_phrase_by_id(metronome_setup.phrase_id)
+			print metronome_setup.id, metronome_setup.speed, metronome_setup.meter, metronome_setup.duration, phrase.get_filename(path=False), phrase.get_short_description()
+
+if __name__ == "__main__":
+	parser = OptionParser()
+	parser.add_option('-d', '--database', action="store", type="string", dest="database", help="sqlite database file to use")
+	parser.add_option('-t', '--todo', action="store_true", dest="todo", help="show todo list")
+	parser.add_option('-l', '--list', action="store_true", dest="list_phrases", help="list all phrases")
+	parser.add_option('-p', '--play', action="store", type="int", dest="play_phrase", help="phrase id to play")
+	parser.add_option('-s', '--show', action="store", type="int", dest="show_phrase", help="phrase id to show")
+	parser.add_option('-r', '--reschedule', action="store", type="int", dest="reschedule_phrase", help="phrase id to (re)schedule")
+	parser.add_option('-e', '--edit', action="store", type="int", dest="edit_phrase", help="phrase id to edit")
+	parser.add_option('-c', '--create', action="store_true", dest="create_phrase", help="create phrase")
+	parser.add_option('-D', '--delete', action="store", type="int", dest="delete_phrase", help="delete phrase")
+	parser.add_option('-x', '--deactivate', action="store", type="int", dest="deactivate_phrase", help="phrase id to deactivate/suspend (exclude from todo/schedules)")
+	parser.add_option('-X', '--list-deactivated', action="store_true", dest="list_deactivated", help="list phrases deactivated from scheduling")
+	parser.add_option('-i', '--init-db', action="store_true", dest="init_db", help="initialize a new database")
+	parser.add_option('-m', '--metronome', action="store", type="int", dest="metronome", help="play metronome associated with the given phrase id")
+	parser.add_option('-R', '--list-repetitions', action="store_true", dest="list_repetitions", help="list repetitions")
+	parser.add_option('-M', '--list-metronome-setups', action="store_true", dest="list_metronome_setups", help="list metronome setups")
+	(options, args) = parser.parse_args()
+	if not options.database:
+		parser.print_help()
+		parser.error("No database file is given")
+	ti = TextInterface(options.database)
+	if options.play_phrase:
+		ti.play_phrase(options.play_phrase)
+	elif options.list_phrases:
+		ti.list_phrases()
+	elif options.show_phrase:
+		ti.show_phrase(options.show_phrase)
+	elif options.reschedule_phrase:
+		ti.reschedule_phrase(options.reschedule_phrase)
+	elif options.todo:
+		ti.show_todo_list()
+	elif options.edit_phrase:
+		ti.edit_phrase(options.edit_phrase)
+	elif options.create_phrase:
+		ti.create_phrase()
+	elif options.delete_phrase:
+		ti.delete_phrase(options.delete_phrase)
+	elif options.deactivate_phrase:
+		ti.deactivate_phrase(options.deactivate_phrase)
+	elif options.list_deactivated:
+		ti.list_deactivated_phrases()
+	elif options.init_db:
+		ti.init_database()
+	elif options.metronome:
+		ti.play_metronome(options.metronome)
+	elif options.list_repetitions:
+		ti.list_repetitions()
+	elif options.list_metronome_setups:
+		ti.list_metronome_setups()
+	else:
+		parser.print_help()
