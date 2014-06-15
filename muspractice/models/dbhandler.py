@@ -1,14 +1,14 @@
 import sys
 import sqlite3
+import libschedule
 from models.Phrase import *
 from models.Schedule import *
 from models.Repetition import *
 from models.MetronomeSetup import *
 
-
 class AbstractDatabaseHandler(object):
 
-	_con = None
+        _con = None
 
 	def __init__(self, db_file):
 		self._con = sqlite3.connect(db_file)
@@ -17,26 +17,26 @@ class AbstractDatabaseHandler(object):
 
 	def init_database(self):
 		self._cur.execute("CREATE TABLE Phrases("
-						  "id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, filename TEXT, image TEXT, tagline TEXT, from_position FLOAT, to_position FLOAT,"
-						  "loop BOOLEAN, speed INTEGER, pitch INTEGER, comment TEXT)")
+                                  "id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, filename TEXT, image TEXT, tagline TEXT, from_position FLOAT, to_position FLOAT,"
+                                  "loop BOOLEAN, speed INTEGER, pitch INTEGER, comment TEXT)")
 
 		self._cur.execute("CREATE TABLE MetronomeSetups("
-						  "id INTEGER PRIMARY KEY AUTOINCREMENT, phrase_id INTEGER, speed INTEGER, meter INTEGER, duration INTEGER, increment INTEGER, "\
-						  "FOREIGN KEY(phrase_id) REFERENCES Phrases(id))")
+                                  "id INTEGER PRIMARY KEY AUTOINCREMENT, phrase_id INTEGER, speed INTEGER, meter INTEGER, duration INTEGER, increment INTEGER, "\
+                                  "FOREIGN KEY(phrase_id) REFERENCES Phrases(id))")
 
 		self._cur.execute("CREATE TABLE Schedules("
-						  "id INTEGER PRIMARY KEY AUTOINCREMENT, phrase_id INTEGER, next_repetition DATE, speed INTEGER, pitch INTEGER, comment TEXT, priority INTEGER, "
-						  "FOREIGN KEY(phrase_id) REFERENCES Phrases(id))")
+                                  "id INTEGER PRIMARY KEY AUTOINCREMENT, phrase_id INTEGER, next_repetition DATE, speed INTEGER, pitch INTEGER, comment TEXT, priority INTEGER, "
+                                  "FOREIGN KEY(phrase_id) REFERENCES Phrases(id))")
 
 		self._cur.execute("CREATE TABLE Repetitions("
-						  "id INTEGER PRIMARY KEY AUTOINCREMENT, phrase_id INTEGER, repetition_date DATE, speed INTEGER, pitch INTEGER, comment TEXT, grade INTEGER, "
-						  "FOREIGN KEY(phrase_id) REFERENCES Phrases(id))")
+                                  "id INTEGER PRIMARY KEY AUTOINCREMENT, phrase_id INTEGER, repetition_date DATE, speed INTEGER, pitch INTEGER, comment TEXT, grade INTEGER, "
+                                  "FOREIGN KEY(phrase_id) REFERENCES Phrases(id))")
 
 	def get_items(self, table, orderby=None):
 		if not orderby:
-				self._cur.execute("SELECT * FROM %s" % table)
+                        self._cur.execute("SELECT * FROM %s" % table)
 		else:
-				self._cur.execute("SELECT * FROM %s ORDER BY %s" % (table, orderby))
+                        self._cur.execute("SELECT * FROM %s ORDER BY %s" % (table, orderby))
 		rows = self._cur.fetchall()
 		return rows
 
@@ -63,15 +63,15 @@ class PhraseHandler(AbstractDatabaseHandler):
 	def insert_phrase(self, phrase):
 		query = '''INSERT INTO Phrases(name, filename, image, tagline, from_position, to_position, loop, speed, pitch, comment) ''' +\
 		'''VALUES("%s", "%s", "%s", "%s", %.3f, %.3f, %d, %d, %d, "%s")''' % (phrase.get_name(),
-																		phrase.get_filename(),
-																		phrase.get_image(),
-																		phrase.get_tagline(),
-																		phrase.get_from_position(),
-																		phrase.get_to_position(),
-																		int(phrase.get_loop()),
-																		phrase.get_speed(),
-																		phrase.get_pitch(),
-																		phrase.get_comment())
+                                                                                      phrase.get_filename(),
+                                                                                      phrase.get_image(),
+                                                                                      phrase.get_tagline(),
+                                                                                      phrase.get_from_position(),
+                                                                                      phrase.get_to_position(),
+                                                                                      int(phrase.get_loop()),
+                                                                                      phrase.get_speed(),
+                                                                                      phrase.get_pitch(),
+                                                                                      phrase.get_comment())
 		self._cur.execute(query)
 		self._con.commit()
 		self._cur.execute("SELECT last_insert_rowid()")
@@ -219,6 +219,7 @@ class ScheduleHandler(AbstractDatabaseHandler):
 				result.append(schedule)
 		return result
 
+
 class RepetitionHandler(AbstractDatabaseHandler):
 
 	def insert_repetition(self, rep):
@@ -322,14 +323,34 @@ class MetronomeSetupHandler(AbstractDatabaseHandler):
 	def update_metronome_setup(self, ms):
 		self._cur.execute("UPDATE MetronomeSetups SET "\
 		"phrase_id=%d,speed=%d,meter=%d,duration=%d,increment=%d WHERE id=%d" % (ms.phrase_id,
-																				 ms.speed,
-																				 ms.meter,
-																				 ms.duration,
-																				 ms.increment,
-																				 ms.id))
+                                                                                         ms.speed,
+                                                                                         ms.meter,
+                                                                                         ms.duration,
+                                                                                         ms.increment,
+                                                                                         ms.id))
 		self._con.commit()
 		return True
 
 class DatabaseHandler(PhraseHandler, ScheduleHandler, RepetitionHandler, MetronomeSetupHandler):
 	pass
 
+
+class PrioritizedScheduleHandler(DatabaseHandler):
+
+        def get_active_schedules(self, orderby=None):
+                schedules = super(PrioritizedScheduleHandler, self).get_active_schedules()
+                for schedule in schedules:
+                        ri = libschedule.RepeatableItem()
+                        phrase_id = schedule.get_phrase_id()
+                        item_repetitions = self.get_repetitions_by_phrase_id(phrase_id, orderby='repetition_date')
+                        print "Schedule", schedule.get_next_repetition()
+                        for item_repetition in item_repetitions:
+                            print "\t", item_repetition
+                            lsr = libschedule.Repetition()
+                            lsr.repetition_timestamp = float(item_repetition.get_date().strftime("%s"))
+                            ri.repetitions.append(lsr)
+                        ri.next_repetition_timestamp = float(schedule.get_next_repetition().strftime("%s"))
+                        prio = ri.get_priority()
+                        schedule.set_priority(prio)
+                prioritized_list = sorted(schedules, key=lambda x: x.get_priority(), reverse=True)
+                return prioritized_list

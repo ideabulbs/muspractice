@@ -9,8 +9,7 @@ from helper import Helper
 import os
 import datetime
 
-
-class TestDatabase(Helper):
+class DatabaseTestBase(object):
 
     dbfile = 'test.db'
 
@@ -18,6 +17,8 @@ class TestDatabase(Helper):
         if os.path.exists(self.dbfile):
                 os.unlink(self.dbfile)
 
+
+class TestDatabase(Helper, DatabaseTestBase):
 
     def test_phrase(self):
         dbh = DatabaseHandler(self.dbfile)
@@ -155,3 +156,31 @@ class TestDatabase(Helper):
         updated_ms = dbh.get_metronome_setup_by_id(new_ms.id)
         assert updated_ms == new_ms
 
+class TestPrioritizedScheduleHandler(Helper, DatabaseTestBase):
+
+    def test_priority(self):
+        psh = PrioritizedScheduleHandler(self.dbfile)
+        psh.init_database()
+
+        phrase_count = 5
+        for p in range(phrase_count):
+
+            phrase = self._create_phrase()
+            phrase_id = psh.insert_phrase(phrase)
+
+            schedule = self._create_schedule()
+            schedule.set_next_repetition(datetime.date.today() - datetime.timedelta(days=p))
+            schedule.set_phrase_id(phrase_id)
+            schedule_id = psh.insert_schedule(schedule)
+
+            repetition_count = 3
+            for i in range(repetition_count):
+                rep = Repetition()
+                rep.set_phrase_id(phrase_id)
+                rep.set_date(schedule.get_next_repetition() - datetime.timedelta(days=i * repetition_count))
+                rep_id = psh.insert_repetition(rep)
+
+        schedules = psh.get_active_schedules()
+        for schedule in schedules:
+            print "%.2f\t%s" % (schedule.get_priority(), schedule.get_next_repetition())
+        assert schedules[0].get_priority() > schedules[1].get_priority() > schedules[2].get_priority() > schedules[3].get_priority() > schedules[4].get_priority()
