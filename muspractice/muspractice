@@ -151,7 +151,11 @@ class TextInterface(object):
 			if not phrase:
 				print "Inconsistent database!"
 				return
-			print phrase.id, "\t", "%.1f" % schedule.get_priority(), "\t", phrase.get_filename(path=False), phrase.get_short_description(), "\t", phrase.get_tagline()
+                        if schedule.get_priority() is not None:
+                            priority = "%.1f" % schedule.get_priority()
+                        else:
+                            priority = "-"
+			print phrase.id, "\t", priority, "\t", phrase.get_filename(path=False), phrase.get_short_description(), "\t", phrase.get_tagline()
 
 	def edit_phrase(self, phrase_id):
 		phrase = self.dbh.get_phrase_by_id(phrase_id)
