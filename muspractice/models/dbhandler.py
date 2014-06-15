@@ -335,17 +335,15 @@ class DatabaseHandler(PhraseHandler, ScheduleHandler, RepetitionHandler, Metrono
 	pass
 
 
-class PrioritizedScheduleHandler(DatabaseHandler):
+class PrioritizedScheduleDatabaseHandler(DatabaseHandler):
 
         def get_active_schedules(self, orderby=None):
-                schedules = super(PrioritizedScheduleHandler, self).get_active_schedules()
+                schedules = super(PrioritizedScheduleDatabaseHandler, self).get_active_schedules()
                 for schedule in schedules:
                         ri = libschedule.RepeatableItem()
                         phrase_id = schedule.get_phrase_id()
                         item_repetitions = self.get_repetitions_by_phrase_id(phrase_id, orderby='repetition_date')
-                        print "Schedule", schedule.get_next_repetition()
                         for item_repetition in item_repetitions:
-                            print "\t", item_repetition
                             lsr = libschedule.Repetition()
                             lsr.repetition_timestamp = float(item_repetition.get_date().strftime("%s"))
                             ri.repetitions.append(lsr)

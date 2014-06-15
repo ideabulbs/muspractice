@@ -156,10 +156,10 @@ class TestDatabase(Helper, DatabaseTestBase):
         updated_ms = dbh.get_metronome_setup_by_id(new_ms.id)
         assert updated_ms == new_ms
 
-class TestPrioritizedScheduleHandler(Helper, DatabaseTestBase):
+class TestPrioritizedScheduleDatabaseHandler(Helper, DatabaseTestBase):
 
     def test_priority(self):
-        psh = PrioritizedScheduleHandler(self.dbfile)
+        psh = PrioritizedScheduleDatabaseHandler(self.dbfile)
         psh.init_database()
 
         phrase_count = 5
