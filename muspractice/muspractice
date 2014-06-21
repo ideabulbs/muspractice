@@ -36,7 +36,6 @@ class TextInterface(object):
 			print "No metronome found for the given phrase!"
 			return
 		metronome = metronomes[0]
-		#sys.exit(1)
 
 		if phrase.get_image():
 			print phrase.get_image()
@@ -44,11 +43,19 @@ class TextInterface(object):
 		if phrase.get_filename():
 			sink = gst.parse_bin_from_description(Config.AUDIOSINK, True)
 			player = tools.Pipeline.Pipeline(sink)
-			if phrase.get_filename().startswith(os.sep):
-				uri = 'file://' + phrase.get_filename()
-			else:
-				uri = 'file://%s%s' % (Config.MUSIC_DIRECTORY, phrase.get_filename())
-			player.reset()
+
+			if phrase.get_filename().startswith(os.sep):  # absolute path given
+				media_file_path = phrase.get_filename()
+			else:  # path relative to Config.MUSIC_DIRECTORY
+                                if not Config.MUSIC_DIRECTORY.endswith(os.sep):
+                                        Config.MUSIC_DIRECTORY += os.sep
+				media_file_path = '%s%s' % (Config.MUSIC_DIRECTORY, phrase.get_filename())
+                        if not os.path.exists(media_file_path):
+                                print "Media file not found: %s" % media_file_path
+                                return
+
+                        uri = "file://%s" % media_file_path
+                        player.reset()
 			player.pause()
 			player.set_file(uri)
 
