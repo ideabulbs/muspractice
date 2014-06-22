@@ -3,24 +3,17 @@ import os
 from models.dbhandler import *
 from helper import Helper
 
+
 class FunctionalBase(Helper):
 
     dbfile = '/tmp/repetition_data.db'
-
+    
     @classmethod
-    def setup_class(cls):
-        # clean up if file exists
-        if os.path.exists(cls.dbfile):
-                os.unlink(cls.dbfile)
-        dbh = DatabaseHandler(cls.dbfile)
-        dbh.init_database()
-
-        phrase_count = 10
+    def _populate_db(cls, dbh, phrase_count):
         phrases = []
         for _ in range(phrase_count):
             phrase = cls._create_phrase()
             phrases.append(phrase)
-
         # import data to the database
         delta = 1
         for phrase in phrases:
@@ -34,9 +27,21 @@ class FunctionalBase(Helper):
             delta += 1
             schedule.set_next_repetition(repetition_date)
             schedule_id = dbh.insert_schedule(schedule)
+        return True
+        
+    @classmethod
+    def setup_class(cls):
+        # clean up if file exists
+        if os.path.exists(cls.dbfile):
+                os.unlink(cls.dbfile)
+        dbh = DatabaseHandler(cls.dbfile)
+        dbh.init_database()
 
+        cls.phrase_count = 10
+        cls._populate_db(dbh, cls.phrase_count)
+        
         schedules = dbh.get_schedules()
-        assert len(schedules) > 0 and len(schedules) == len(phrases)
+        assert len(schedules) > 0 and len(schedules) == cls.phrase_count
 
         # prevent editor from starting during automated tests
         if 'EDITOR' in os.environ:
@@ -46,7 +51,7 @@ class FunctionalBase(Helper):
     def teardown_class(cls):
         if os.path.exists(cls.dbfile):
             os.unlink(cls.dbfile)
-
+            
     def run_program(self, keys):
         cmd = "./muspractice %s" % keys
         popen = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -66,7 +71,7 @@ class FunctionalBase(Helper):
     def get_phrase_list_length(self):
         keys = "-d %s -l" % self.dbfile
         stdout, stderr = self.run_program(keys)
-        length = len(stdout.split(os.linesep))
+        length = len(stdout.strip().split(os.linesep))
         return length
 
     def get_todo_list_length(self):
@@ -87,9 +92,18 @@ class FunctionalBase(Helper):
         length = len(stdout.split(os.linesep))
         return length
 
-
+ 
 class TestFunctional(FunctionalBase):
 
+    remove_files = []
+    
+    def teardown(self):
+        if self.remove_files:
+            for f in self.remove_files:
+                if os.path.exists(f):
+                    os.unlink(f)
+            del self.remove_files[:]
+    
     def test_list(self):
         keys = "-d %s -l" % self.dbfile
         stdout, stderr = self.run_program(keys)
@@ -198,3 +212,24 @@ class TestFunctional(FunctionalBase):
         current_metronome_list_length = self.get_metronome_list_length()
         assert current_metronome_list_length == original_metronome_list_length + 1
 
+    def test_database_path(self):
+        alternate_db_file = '/tmp/altdb.db'
+        self.remove_files.append(alternate_db_file)
+        alt_dbh = DatabaseHandler(alternate_db_file)
+        alt_dbh.init_database()
+        
+        os.environ['MUSPRACTICE_DB_FILE'] = alternate_db_file
+
+        # insert two more phrases than in the main database created in setup_class:
+        phrase_count = self.get_phrase_list_length() + 2
+        if not self._populate_db(alt_dbh, phrase_count):
+            raise RuntimeError("Could not populate test database: %s" % alternate_db_file)
+        
+        phrases = []
+        for _ in range(phrase_count):
+            phrase = self._create_phrase()
+            phrases.append(phrase)
+        keys = '-l'
+        stdout, stderr = self.run_program(keys)
+        current_phrase_list_length = len(stdout.strip().split(os.linesep))
+        assert current_phrase_list_length == phrase_count
