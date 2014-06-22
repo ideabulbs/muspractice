@@ -271,7 +271,8 @@ class TextInterface(object):
             if not phrase:
                 print "Inconsistent database!"
                 return
-            print phrase.id, "\t", "DEACTIVATED", "\t", phrase.get_filename(path=False), phrase.get_short_description(), "\t", phrase.get_tagline(), '.'
+            print phrase.id, "\t", "DEACTIVATED", "\t", phrase.get_filename(path=False),
+            phrase.get_short_description(), "\t", phrase.get_tagline(), '.'
 
     def init_database(self):
         self.dbh.init_database()
@@ -291,9 +292,12 @@ class TextInterface(object):
         m.set_speed(ms.speed)
         print "Metronome tempo: %d" % ms.speed
         m.set_duration(ms.duration)
-        m.start()
+        if not m.start():
+            print "Could not start metronome!"
         time.sleep(ms.duration)
-
+        if not m.stop():
+            print "Could not stop metronome!"
+        
     def list_repetitions(self):
         repetitions = self.dbh.get_repetitions()
         for repetition in repetitions:
