@@ -82,7 +82,7 @@ class TextInterface(object):
                 position = player.get_position()
                 if not position:
                     continue
-                if position < player.get_from_position() or position > player.get_to_position():
+                if position <= player.get_from_position() or position > player.get_to_position() or duration == 0:
                     if duration > metronome.duration:
                         break
                     print "Repetition %d" % repetition
