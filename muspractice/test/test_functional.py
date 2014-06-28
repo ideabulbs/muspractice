@@ -24,33 +24,31 @@ class FunctionalBase(Helper):
             schedule.set_phrase_id(phrase_id)
 
             repetition_date = datetime.date.today() + datetime.timedelta(days=delta)
-            delta += 1
+            delta -= 1
             schedule.set_next_repetition(repetition_date)
             schedule_id = dbh.insert_schedule(schedule)
         return True
         
-    @classmethod
-    def setup_class(cls):
+    def setup(self):
         # clean up if file exists
-        if os.path.exists(cls.dbfile):
-                os.unlink(cls.dbfile)
-        dbh = DatabaseHandler(cls.dbfile)
+        if os.path.exists(self.dbfile):
+                os.unlink(self.dbfile)
+        dbh = DatabaseHandler(self.dbfile)
         dbh.init_database()
 
-        cls.phrase_count = 10
-        cls._populate_db(dbh, cls.phrase_count)
+        self.phrase_count = 10
+        self._populate_db(dbh, self.phrase_count)
         
         schedules = dbh.get_schedules()
-        assert len(schedules) > 0 and len(schedules) == cls.phrase_count
+        assert len(schedules) > 0 and len(schedules) == self.phrase_count
 
         # prevent editor from starting during automated tests
         if 'EDITOR' in os.environ:
             os.environ.pop('EDITOR', None)
 
-    @classmethod
-    def teardown_class(cls):
-        if os.path.exists(cls.dbfile):
-            os.unlink(cls.dbfile)
+    def teardown(self):
+        if os.path.exists(self.dbfile):
+           os.unlink(self.dbfile)
             
     def run_program(self, keys):
         cmd = "./muspractice %s" % keys
@@ -135,15 +133,20 @@ class TestFunctional(FunctionalBase):
 
     def test_reactivate_phrase(self):
         original_todo_list_length = self.get_todo_list_length()
-        phrase_id = "8"
+        phrase_id = "9"
         keys = "-d %s -x %s" % (self.dbfile, phrase_id)
         stdout, stderr = self.run_program(keys)
         assert len(stderr) == 0
-        deactivated_todo_list_length = self.get_todo_list_length()
-        assert deactivated_todo_list_length == original_todo_list_length -1
+
+        keys = "-d %s -X" % self.dbfile
+        stdout, stderr = self.run_program(keys)
+        initial_deactivated_list_length = len(stdout.split(os.linesep))
         stdout, stderr = self.reschedule(phrase_id, "3")
-        current_list_length = self.get_todo_list_length()
-        assert current_list_length == deactivated_todo_list_length + 1
+        assert not stderr
+        stdout, stderr = self.run_program(keys)
+        current_deactivated_list_length = len(stdout.split(os.linesep))
+        assert current_deactivated_list_length == initial_deactivated_list_length - 1
+        
 
     def test_list_deactivated(self):
         keys = "-d %s -x 2" % self.dbfile
