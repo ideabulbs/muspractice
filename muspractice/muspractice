@@ -22,9 +22,20 @@ gobject.threads_init()
 
 class TextInterface(object):
 
-    def __init__(self, database):
+    def __init__(self):
+        config_filename = ".muspracticerc"
+        if os.path.exists('./%s' % config_filename):
+            config_filename = "./%s" % config_filename
+        else:
+            config_filename = "~/%s" % config_filename
+        self.config = Config(config_filename)
+        if self.config.is_new:
+            print "New config has been initialized. Verify settings: %s" % config_filename        
+            sys.exit(0)
+            
+    def init_dbhandler(self, database):
         self.dbh = PrioritizedScheduleDatabaseHandler(database)
-
+                        
     def list_phrases(self):
         phrases = self.dbh.get_phrases(orderby='id')
         for phrase in phrases:
@@ -42,20 +53,18 @@ class TextInterface(object):
             print phrase.get_image()
 
         if phrase.get_filename():
-            sink = gst.parse_bin_from_description(Config.AUDIOSINK, True)
+            sink = gst.parse_bin_from_description(self.config.AUDIOSINK, True)
             player = tools.Pipeline.Pipeline(sink)
 
             if phrase.get_filename().startswith(os.sep):  # absolute path given
                 media_file_path = phrase.get_filename()
-            else:  # path relative to Config.MUSIC_DIRECTORY
-                if not Config.MUSIC_DIRECTORY.endswith(os.sep):
-                    Config.MUSIC_DIRECTORY += os.sep
-            media_file_path = '%s%s' % (Config.MUSIC_DIRECTORY, phrase.get_filename())
+            else:  # path relative to self.config.MUSIC_DIRECTORY
+                media_file_path = '%s%s' % (self.config.MUSIC_DIRECTORY, phrase.get_filename())
             if not os.path.exists(media_file_path):
                 sys.stderr.write("Media file not found: %s\n" % media_file_path)
                 return
 
-            uri = "file://%s" % media_file_path
+            uri = "file://%s" % os.path.expanduser(media_file_path)
             player.reset()
             player.pause()
             player.set_file(uri)
@@ -172,7 +181,7 @@ class TextInterface(object):
         if not phrase and not metronome_setups:
             print "No phrase or metronome found"
             return False
-        tempfile = '%sdata_%.2f.ini' % (Config.TEMPORARY_DIRECTORY, time.time())
+        tempfile = '%sdata_%.2f.ini' % (self.config.TEMPORARY_DIRECTORY, time.time())
 
         if not metronome_setups:
             metronome_setup = MetronomeSetup()
@@ -317,7 +326,7 @@ def main():
     parser.add_option('-d', '--database', action="store",
                       type="string", dest="database",
                       help="sqlite database file to use. "
-                      "If not given, environment variable MUSPRACTICE_DB_FILE is used. "
+                      "If not given, the filename is looked up in config file (.muspracticerc)."
                       "Otherwise the option overrides the variable")
     
     parser.add_option('-t', '--todo', action="store_true",
@@ -370,20 +379,18 @@ def main():
                       dest="list_metronome_setups", help="list metronome setups")
     
     (options, args) = parser.parse_args()
-     
+      
+    ti = TextInterface()
+    
     if not options.database:
-        if not 'MUSPRACTICE_DB_FILE' in os.environ:
-            parser.print_help()
-            parser.error("No database file is given and MUSPRACTICE_DB_FILE environment variable is not set")
-        else:
-            options.database = os.environ['MUSPRACTICE_DB_FILE']
-            
+        options.database = ti.config.DATABASE_FILE
+                
     if not os.path.exists(options.database):
-        sys.stderr.write('Could not find database file: %s\n' % options.database)
+        sys.stderr.write('Could not find database file: %s. Initialize new: ./muspractice -d <filename> -i \n' % options.database)
         sys.exit(1)
         
-    ti = TextInterface(options.database)
-    
+    ti.init_dbhandler(options.database)
+        
     if options.play_phrase:
         ti.play_phrase(options.play_phrase)
     elif options.list_phrases:

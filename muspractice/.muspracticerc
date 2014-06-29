@@ -1,0 +1,5 @@
+[General]
+audiosink = jackaudiosink
+music_directory = ~/repmusic
+database_file = data.db
+temporary_directory = /tmp/
