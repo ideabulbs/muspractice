@@ -221,8 +221,6 @@ class TestFunctional(FunctionalBase):
         alt_dbh = DatabaseHandler(alternate_db_file)
         alt_dbh.init_database()
         
-        os.environ['MUSPRACTICE_DB_FILE'] = alternate_db_file
-
         # insert two more phrases than in the main database created in setup_class:
         phrase_count = self.get_phrase_list_length() + 2
         if not self._populate_db(alt_dbh, phrase_count):
@@ -232,7 +230,7 @@ class TestFunctional(FunctionalBase):
         for _ in range(phrase_count):
             phrase = self._create_phrase()
             phrases.append(phrase)
-        keys = '-l'
+        keys = '-l -d %s' % alternate_db_file
         stdout, stderr = self.run_program(keys)
         current_phrase_list_length = len(stdout.strip().split(os.linesep))
         assert current_phrase_list_length == phrase_count
