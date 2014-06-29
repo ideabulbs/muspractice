@@ -309,8 +309,8 @@ class TextInterface(object):
             sr.filename = os.path.expanduser(self.config.MUSIC_DIRECTORY + phrase.get_image())
             sr.duration = ms.duration
 
-        if not sr.start():
-            print "Could not show image!"
+            if not sr.start():
+                print "Could not show image!"
 
         # if speed is 0, metronome won't be started
         if ms.speed != 0:
