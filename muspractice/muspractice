@@ -13,7 +13,8 @@ from models.Scheduler import *
 from models.Repetition import *
 from models.MetronomeSetup import *
 from models.IniSerializator import *
-from tools.Metronome import *
+from tools.Metronome import Metronome
+from tools.SightRead import SightRead
 from config.config import Config
 
 import gobject
@@ -302,11 +303,26 @@ class TextInterface(object):
         m.set_speed(ms.speed)
         print "Metronome tempo: %d" % ms.speed
         m.set_duration(ms.duration)
-        if not m.start():
-            print "Could not start metronome!"
+
+        if phrase.get_image():
+            sr = SightRead()
+            sr.filename = os.path.expanduser(self.config.MUSIC_DIRECTORY + phrase.get_image())
+            sr.duration = ms.duration
+
+        if not sr.start():
+            print "Could not show image!"
+
+        # if speed is 0, metronome won't be started
+        if ms.speed != 0:
+            if not m.start():
+                print "Could not start metronome!"
+                
         time.sleep(ms.duration)
-        if not m.stop():
-            print "Could not stop metronome!"
+
+        # if speed is 0, metronome wasn't started and doesn't have to be stopped
+        if ms.speed != 0:
+            if not m.stop():
+                print "Could not stop metronome!"
         
     def list_repetitions(self):
         repetitions = self.dbh.get_repetitions()
