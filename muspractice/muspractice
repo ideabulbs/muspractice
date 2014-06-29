@@ -323,7 +323,10 @@ class TextInterface(object):
         if ms.speed != 0:
             if not m.stop():
                 print "Could not stop metronome!"
-        
+
+        if phrase.get_image():
+            sr.stop()
+                
     def list_repetitions(self):
         repetitions = self.dbh.get_repetitions()
         for repetition in repetitions:
