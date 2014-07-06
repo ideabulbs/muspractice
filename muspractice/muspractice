@@ -52,8 +52,8 @@ class TextInterface(object):
         metronome = metronomes[0]
 
         if phrase.get_image():
-            print phrase.get_image()
-
+            sr = self.show_image(phrase, metronome)
+            
         if phrase.get_filename():
             sink = gst.parse_bin_from_description(self.config.AUDIOSINK, True)
             player = tools.Pipeline.Pipeline(sink)
@@ -103,7 +103,11 @@ class TextInterface(object):
                 duration += 1
                 time.sleep(1)
             player.pause()
+            
+        if phrase.get_image():
+            sr.stop()
 
+            
     def show_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         if phrase:
@@ -290,6 +294,14 @@ class TextInterface(object):
     def init_database(self):
         self.dbh.init_database()
 
+    def show_image(self, phrase, ms):
+        sr = SightRead()
+        sr.filename = os.path.expanduser(self.config.MUSIC_DIRECTORY + phrase.get_image())
+        sr.duration = ms.duration
+        if not sr.start():
+            print "Could not show image!"
+        return sr
+            
     def play_metronome(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         if not phrase:
@@ -307,13 +319,8 @@ class TextInterface(object):
         m.set_duration(ms.duration)
 
         if phrase.get_image():
-            sr = SightRead()
-            sr.filename = os.path.expanduser(self.config.MUSIC_DIRECTORY + phrase.get_image())
-            sr.duration = ms.duration
-
-            if not sr.start():
-                print "Could not show image!"
-
+            sr = self.show_image(phrase, ms)
+            
         # if speed is 0, metronome won't be started
         if ms.speed != 0:
             if not m.start():
