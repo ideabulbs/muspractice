@@ -180,7 +180,10 @@ class TextInterface(object):
             else:
                 priority = None
             if priority:
-                print phrase.id, "\t", priority, "\t", phrase.get_filename(path=False), phrase.get_short_description(), "\t", phrase.get_tagline()
+                description = phrase.get_name()
+                if not description:
+                    description = phrase.get_short_description()
+                print phrase.id, "\t", priority, "\t", phrase.get_filename(path=False), description, "\t", phrase.get_tagline()
 
     def edit_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
