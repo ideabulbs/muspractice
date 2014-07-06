@@ -158,7 +158,7 @@ class TextInterface(object):
         metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
         if metronomes:
             ms = metronomes[0]
-            if ms.increment:
+            if ms.increment and ms.speed != 0:
                 ms.speed += ms.increment
             if not self.dbh.update_metronome_setup(ms):
                 print "Failed to update the metronome setup"
