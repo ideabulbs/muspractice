@@ -317,8 +317,9 @@ class TextInterface(object):
         ms = metronomes[0]
 
         m = Metronome()
+        m.set_meter(ms.meter)
         m.set_speed(ms.speed)
-        print "Metronome tempo: %d" % ms.speed
+        print "Metronome tempo: %d; Meter: %s" % (ms.speed, ms.meter)
         m.set_duration(ms.duration)
 
         if phrase.get_image():

@@ -11,6 +11,7 @@ class Metronome(object):
     
     def __init__(self):
         self._duration = 0
+        self._meter = 0
         self._is_playing = False
         self._popen = None
         
@@ -49,8 +50,12 @@ class Metronome(object):
             def run(self):
                 self.wait()
                 self._metronome.stop()
-                                
-        command = "klick -e %d" % (self._speed)
+
+        if self._meter == 0:
+            command = "klick -e %d" % (self._speed)
+        else:
+            command = "klick %d/4 %d" % (self._meter, self._speed)
+        
         self._is_playing = True
         if self._duration:
             self._popen = subprocess.Popen(command.split(), shell=False)
@@ -84,10 +89,14 @@ class Metronome(object):
     def set_speed(self, speed):
         self._speed = speed
 
+    def set_meter(self, meter):
+        self._meter = meter
+        
 if __name__ == '__main__':
     m = Metronome()
     m.set_speed(130)
-    m.set_duration(5)
+    m.set_meter(3)
+    m.set_duration(10)
     m.start()
-    time.sleep(5)
+    time.sleep(10)
     m.stop()
