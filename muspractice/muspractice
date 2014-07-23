@@ -139,8 +139,9 @@ class TextInterface(object):
             user_input = raw_input("Enter new grade (0-5): ")
             try:
                 grade = int(user_input)
-                break
-            except:
+                if grade in range(0,6):
+                    break
+            except ValueError:
                 continue
         current_repetition = Repetition()
         current_repetition.set_date(datetime.date.today())
