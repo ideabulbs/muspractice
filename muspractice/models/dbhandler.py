@@ -1,10 +1,10 @@
 import sys
 import sqlite3
 import libschedule
-from models.Phrase import *
-from models.Schedule import *
-from models.Repetition import *
-from models.MetronomeSetup import *
+from Phrase import *
+from Schedule import *
+from Repetition import *
+from MetronomeSetup import *
 
 class AbstractDatabaseHandler(object):
 
