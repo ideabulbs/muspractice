@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import os
-from muspractice.models.dbhandler import PrioritizedScheduleDatabaseHandler
+from models.dbhandler import PrioritizedScheduleDatabaseHandler
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "lib.settings")
 import django
 from app.models import Phrase, MetronomeSetup, Tag, Schedule, Repetition
@@ -11,7 +11,7 @@ import datetime
 
 class Migrator(object):
     def __init__(self):
-        self.dbh = PrioritizedScheduleDatabaseHandler(os.path.expanduser('~/sync/Music/bass.db'))
+        self.dbh = PrioritizedScheduleDatabaseHandler(os.path.expanduser('data.db'))
 
     def migrate(self):
         legacy_phrases = self.dbh.get_phrases()
