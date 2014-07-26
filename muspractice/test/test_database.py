@@ -1,5 +1,6 @@
 import sqlite3
-from models.dbhandler import *
+from django.test import TestCase
+from models.dao import DatabaseHandler
 from models.Schedule import *
 from models.Scheduler import *
 from models.Repetition import *
@@ -9,19 +10,11 @@ from helper import Helper
 import os
 import datetime
 
-class DatabaseTestBase(object):
 
-    dbfile = 'test.db'
-
-    def teardown(self):
-        if os.path.exists(self.dbfile):
-                os.unlink(self.dbfile)
-
-
-class TestDatabase(Helper, DatabaseTestBase):
+class TestDatabase(TestCase, Helper):
 
     def test_phrase(self):
-        dbh = DatabaseHandler(self.dbfile)
+        dbh = DatabaseHandler()
         dbh.init_database()
 
         phrase = self._create_phrase()
