@@ -96,6 +96,10 @@ class TestDatabase(TestCase, Helper):
         current_phrases = dbh.get_phrases(orderby="filename")
         assert len(current_phrases) == 2
 
+        assert dbh.remove_phrase(phrase1)
+        assert dbh.remove_phrase(phrase2)
+        assert dbh.remove_phrase(phrase)
+
     def test_schedule(self):
         dbh = DatabaseHandler()
         phrase = self._create_phrase()
@@ -119,6 +123,10 @@ class TestDatabase(TestCase, Helper):
 
         schedules = dbh.get_schedules()
         assert len(schedules) == 3
+
+        assert dbh.remove_schedule(schedule)
+        assert dbh.remove_schedule(schedule1)
+        assert dbh.remove_schedule(schedule2)
         
     def test_repetition(self):
         dbh = DatabaseHandler()
@@ -152,7 +160,9 @@ class TestDatabase(TestCase, Helper):
         reps = dbh.get_repetitions()
         assert len(reps) == 0
         
+        assert dbh.remove_repetition(rep)
 
+        
     def test_metronome_setup(self):
         dbh = DatabaseHandler()
 
@@ -183,4 +193,8 @@ class TestDatabase(TestCase, Helper):
         assert result == True
         updated_ms = dbh.get_metronome_setup_by_id(new_ms.id)
         assert updated_ms == new_ms
+
+        assert dbh.remove_metronome_setup(updated_ms)
+        assert dbh.remove_metronome_setup(new_ms)
+        assert dbh.remove_metronome_setup(ms)
         
