@@ -15,10 +15,11 @@ import tools.Pipeline
 from app.dao import DatabaseHandler
 from app.models import Phrase, MetronomeSetup, Schedule, Repetition, Tag
 from models.Scheduler import Scheduler
-from models.IniSerializator import IniSerializator
 from tools.Metronome import Metronome
 from tools.SightRead import SightRead
 from config.config import Config
+from app.ini_serialize import IniSerializator
+
 
 import gobject
 gobject.threads_init()
@@ -44,9 +45,7 @@ class TextInterface(object):
         phrases = self.dbh.get_phrases(orderby='id')
         out = ""
         for phrase in phrases:
-            out += "%d\t%s\t%s\t" % (phrase.id, phrase.get_filename(path=False), phrase.comment.split(os.linesep)[0])
-            for tag in phrase.tags.all():
-                out += "%s" % tag.name
+            out += "%d\t%s\t%s\t%s" % (phrase.id, phrase.get_filename(path=False), phrase.comment.split(os.linesep)[0], phrase.get_tagline())
             out += os.linesep
         print out,
         
@@ -79,15 +78,15 @@ class TextInterface(object):
             player.pause()
             player.set_file(uri)
 
-            player.set_from_position(phrase.from_position)
-            player.set_to_position(phrase.to_position)
+            player.set_from_position(int(phrase.from_position))
+            player.set_to_position(int(phrase.to_position))
 
             speed = phrase.speed
             if speed > 0:
                 speed = speed / 100.0
             else:
                 speed = 1.0
-            player.set_speed(speed)
+            player.set_speed(int(speed))
 
             if phrase.pitch:
                 player.set_pitch(2**(phrase.get_pitch()/12.0))
@@ -210,7 +209,7 @@ class TextInterface(object):
     def edit_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         metronome_setups = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
-        if not phrase and not metronome_setups:
+        if not phrase or not metronome_setups:
             print "No phrase or metronome found"
             return False
         tempfile = '%sdata_%.2f.ini' % (self.config.TEMPORARY_DIRECTORY, time.time())
@@ -230,6 +229,7 @@ class TextInterface(object):
         if not pis.write():
             print "Unable to write temporary file: %s" % tempfile
             return
+        
         if not 'EDITOR' in os.environ:
             print "Can't find suitable editor. Set the EDITOR environment variable!"
         else:
@@ -260,15 +260,28 @@ class TextInterface(object):
         else:
             print "Phrase removed: %s %s" % (phrase.get_filename(path=False), phrase.get_short_description())
 
-    def create_phrase(self):
+    def _get_new_phrase(self):
         phrase = Phrase()
+        phrase.from_position = 0.0
+        phrase.to_position = 0.0
+        phrase.volume = 100
+        phrase.speed = 100
+        phrase.speed_increment = 0
+        phrase.pitch = 0
+        phrase.loop = True
+        return phrase
+    
+    def create_phrase(self):
+        phrase = self._get_new_phrase()
         phrase_id = self.dbh.insert_phrase(phrase)
         if not phrase_id:
             print "Failed to add phrase to database"
             return
         schedule = Schedule()
-        schedule.set_phrase_id(phrase_id)
-        schedule.set_next_repetition(datetime.date.today())
+        schedule.phrase = phrase
+        next_rep = datetime.datetime.utcnow()
+        next_rep = next_rep.replace(tzinfo=utc)
+        schedule.next_repetition = next_rep
         schedule_id = self.dbh.insert_schedule(schedule)
         if not schedule_id:
             print "Failed to schedule the new phrase"
@@ -276,6 +289,8 @@ class TextInterface(object):
         metronome_setup = MetronomeSetup()
         metronome_setup.phrase_id = phrase_id
         metronome_setup.speed = 100
+        metronome_setup.speed_increment = 1
+        metronome_setup.volume = 100
         metronome_setup.meter = 4
         metronome_setup.duration = 300
         metronome_setup.increment = 2
@@ -309,16 +324,15 @@ class TextInterface(object):
         schedules = self.dbh.get_inactive_schedules(orderby="next_repetition")
         schedules.reverse()
         for schedule in schedules:
-            phrase = self.dbh.get_phrase_by_id(schedule.get_phrase_id())
+            phrase = schedule.phrase
             if not phrase:
                 print "Inconsistent database!"
                 return
-            print phrase.id, "\t", "DEACTIVATED", "\t", phrase.get_filename(path=False),
-            phrase.get_short_description(), "\t", phrase.get_tagline(), '.'
+            print phrase.id, "\t", "DEACTIVATED", "\t", phrase.get_filename(path=False), phrase.get_short_description(), "\t", phrase.get_tagline(), '.'
 
     def show_image(self, phrase, ms):
         sr = SightRead()
-        sr.filename = os.path.expanduser(self.config.MUSIC_DIRECTORY + phrase.get_image())
+        sr.filename = os.path.expanduser(self.config.MUSIC_DIRECTORY + phrase.image)
         sr.duration = ms.duration
         if not sr.start():
             print "Could not show image!"
@@ -341,7 +355,7 @@ class TextInterface(object):
         print "Metronome tempo: %d; Meter: %s" % (ms.speed, ms.meter)
         m.set_duration(ms.duration)
 
-        if phrase.get_image():
+        if phrase.image:
             sr = self.show_image(phrase, ms)
             
         # if speed is 0, metronome won't be started
@@ -356,7 +370,7 @@ class TextInterface(object):
             if not m.stop():
                 print "Could not stop metronome!"
 
-        if phrase.get_image():
+        if phrase.image:
             sr.stop()
                 
     def list_repetitions(self):
@@ -368,7 +382,7 @@ class TextInterface(object):
     def list_metronome_setups(self):
         metronome_setups = self.dbh.get_metronome_setups()
         for metronome_setup in metronome_setups:
-            phrase = self.dbh.get_phrase_by_id(metronome_setup.phrase_id)
+            phrase = self.dbh.get_phrase_by_id(metronome_setup.phrase.id)
             print metronome_setup.id, metronome_setup.speed, metronome_setup.meter, metronome_setup.duration, phrase.get_filename(path=False), phrase.get_short_description()
 
 def main():

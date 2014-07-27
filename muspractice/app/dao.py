@@ -74,8 +74,13 @@ class ScheduleHandler(object):
         inactive_date = inactive_date.replace(tzinfo=utc)
         return Schedule.objects.filter(next_repetition__gt=inactive_date)
 
-    def get_inactive_schedules(self):
-        return []
+    def get_inactive_schedules(self, orderby=None):
+        inactive_date = datetime.datetime(1970, 1, 2, 0, 0)
+        inactive_date = inactive_date.replace(tzinfo=utc)
+        if not orderby:
+            return Schedule.objects.filter(next_repetition__lt=inactive_date)
+        else:
+            return Schedule.objects.filter(next_repetition__lt=inactive_date).order_by(orderby)
 
     
 class PrioritizedScheduleHandler(ScheduleHandler):
@@ -120,7 +125,10 @@ class RepetitionHandler(object):
             repetitions = Repetition.objects.filter(phrase__id=phrase_id)
         else:
             repetitions = Repetition.objects.filter(phrase__id=phrase_id).order_by(orderby)
-        return repetitions
+        result = []
+        for r in repetitions:
+            result.append(r)
+        return result
 
     def remove_repetition(self, repetition):
         if repetition.id is not None:

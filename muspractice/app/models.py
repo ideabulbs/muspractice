@@ -40,7 +40,20 @@ class Phrase(models.Model):
         for tag in self.tags.all():
             out += tag.name + " "
         return out
-        
+
+    def set_tagline(self, tagline):
+        tagline = tagline.strip()
+        for tag in self.tags.all():
+            self.tags.remove(tag)
+        for tag_string in tagline.split():
+            try:
+                tag = Tag.objects.get(name=tag_string)
+            except Tag.DoesNotExist:
+                tag = Tag()
+                tag.name = tag_string
+                tag.save()
+            self.tags.add(tag)
+    
     def __unicode__(self):
         if self.id:
             return "Phrase(id=%d; name=%s; comment=%s)" % (self.id, self.name, self.comment)
@@ -65,8 +78,8 @@ class Phrase(models.Model):
                and pitch_match \
                and comment_match \
                and image_match
-        
-    
+
+                   
 class MetronomeSetup(models.Model):
     duration = models.FloatField()
     meter = models.IntegerField()

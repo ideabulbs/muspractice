@@ -161,7 +161,7 @@ class Pipeline(gst.Pipeline):
 
 	def seek(self, position):
 		pos = self.pipe_time(position)
-		self.playbin.seek_simple(TIME_FORMAT, gst.SEEK_FLAG_FLUSH, pos)
+		self.playbin.seek_simple(TIME_FORMAT, gst.SEEK_FLAG_FLUSH, int(pos))
 
 	def pause(self):
 		self._paused = True
