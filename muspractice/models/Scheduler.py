@@ -1,6 +1,8 @@
-from models.Repetition import *
-from models.Schedule import *
+from app.models import Schedule, Repetition
 import random
+import datetime
+from django.utils.timezone import utc
+
 
 class Scheduler(object):
 
@@ -57,18 +59,20 @@ class Scheduler(object):
         @rtype: models.Schedule
         """
         schedule = Schedule()
-        schedule.set_phrase_id(phrase.id)
+        schedule.phrase = phrase
         new_interval = 1
         if repetition_list and len(repetition_list) > 1:
             rep1 = repetition_list[-2]
             rep2 = repetition_list[-1]
-            date1 = rep1.get_date()
-            date2 = rep2.get_date()
+            date1 = rep1.timestamp
+            date2 = rep2.timestamp
             delta = date2 - date1
             new_interval = self._get_new_interval(delta.days, grade)
         elif repetition_list:
             new_interval = self._get_new_interval(1, grade)
         else:
             new_interval = self._get_new_interval(0, grade)
-        schedule.set_next_repetition(datetime.date.today() + datetime.timedelta(days=new_interval))
+        next_rep = datetime.datetime.utcnow() + datetime.timedelta(days=new_interval)
+        next_rep = next_rep.replace(tzinfo=utc)
+        schedule.next_repetition = next_rep
         return schedule

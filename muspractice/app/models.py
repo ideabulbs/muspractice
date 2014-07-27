@@ -1,9 +1,11 @@
 from django.db import models
+import os
 
 
 class Tag(models.Model):
     name = models.CharField(max_length=255)
-
+    def __unicode__(self):
+        return self.name
     
 class Phrase(models.Model):
     comment = models.TextField()
@@ -14,11 +16,31 @@ class Phrase(models.Model):
     name = models.CharField(max_length=255)
     pitch = models.FloatField()
     speed = models.FloatField()
+    speed_increment = models.FloatField()
     tags = models.ManyToManyField(Tag)
     to_position = models.FloatField()
     volume = models.IntegerField()
     tags = models.ManyToManyField(Tag)
 
+    def get_filename(self, path=True):
+        if path:
+            return self.filename
+        else:
+            return self.filename.split(os.sep)[-1]
+
+    def get_short_description(self):
+        if self.comment:
+            lines = self.comment.split(os.linesep)
+            return lines[0].strip()
+        else:
+            return ""
+        
+    def get_tagline(self):
+        out = ""
+        for tag in self.tags.all():
+            out += tag.name + " "
+        return out
+        
     def __unicode__(self):
         if self.id:
             return "Phrase(id=%d; name=%s; comment=%s)" % (self.id, self.name, self.comment)
@@ -75,12 +97,10 @@ class Repetition(models.Model):
         
 class Schedule(models.Model):
     comment = models.TextField()
-    metronome_speed = models.FloatField()
     next_repetition = models.DateTimeField()
     phrase = models.ForeignKey(Phrase)
-    phrase_speed = models.FloatField()
-    pitch = models.FloatField()
-    priority = models.FloatField()
+    priority = 0
+    
 
 # Implemented for future use:        
 class RecordingTrack(models.Model):

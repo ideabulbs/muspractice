@@ -1,19 +1,21 @@
 #!/usr/bin/python
+import os
+from models.dbhandler import PrioritizedScheduleDatabaseHandler
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "lib.settings")
+import django
+from django.utils.timezone import utc
 import gst
 import sys
-import os
 import time
 import datetime
 import random
 import ConfigParser
 from optparse import OptionParser
 import tools.Pipeline
-from models.dbhandler import PrioritizedScheduleDatabaseHandler
-from models.Schedule import *
-from models.Scheduler import *
-from models.Repetition import *
-from models.MetronomeSetup import *
-from models.IniSerializator import *
+from app.dao import DatabaseHandler
+from app.models import Phrase, MetronomeSetup, Schedule, Repetition, Tag
+from models.Scheduler import Scheduler
+from models.IniSerializator import IniSerializator
 from tools.Metronome import Metronome
 from tools.SightRead import SightRead
 from config.config import Config
@@ -36,13 +38,18 @@ class TextInterface(object):
             sys.exit(0)
             
     def init_dbhandler(self, database):
-        self.dbh = PrioritizedScheduleDatabaseHandler(database)
+        self.dbh = DatabaseHandler()
                         
     def list_phrases(self):
         phrases = self.dbh.get_phrases(orderby='id')
+        out = ""
         for phrase in phrases:
-            print phrase.id, '\t', phrase.get_filename(path=False), "\t", phrase.get_comment().split(os.linesep)[0], "\t", phrase.get_tagline()
-
+            out += "%d\t%s\t%s\t" % (phrase.id, phrase.get_filename(path=False), phrase.comment.split(os.linesep)[0])
+            for tag in phrase.tags.all():
+                out += "%s" % tag.name
+            out += os.linesep
+        print out,
+        
     def play_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
@@ -51,7 +58,7 @@ class TextInterface(object):
             return
         metronome = metronomes[0]
 
-        if phrase.get_image():
+        if phrase.image:
             sr = self.show_image(phrase, metronome)
             
         if phrase.get_filename():
@@ -72,17 +79,17 @@ class TextInterface(object):
             player.pause()
             player.set_file(uri)
 
-            player.set_from_position(phrase.get_from_position())
-            player.set_to_position(phrase.get_to_position())
+            player.set_from_position(phrase.from_position)
+            player.set_to_position(phrase.to_position)
 
-            speed = phrase.get_speed()
+            speed = phrase.speed
             if speed > 0:
                 speed = speed / 100.0
             else:
                 speed = 1.0
             player.set_speed(speed)
 
-            if phrase.get_pitch():
+            if phrase.pitch:
                 player.set_pitch(2**(phrase.get_pitch()/12.0))
 
             player.set_loop(True)
@@ -104,7 +111,7 @@ class TextInterface(object):
                 time.sleep(1)
             player.pause()
             
-        if phrase.get_image():
+        if phrase.image:
             sr.stop()
 
             
@@ -112,21 +119,21 @@ class TextInterface(object):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         if phrase:
             print
-            print "File: %s" % phrase.get_filename()
-            if phrase.get_image():
-                print "Image: %s" % phrase.get_image()
+            print "File: %s" % phrase.filename
+            if phrase.image:
+                print "Image: %s" % phrase.image
             if phrase.get_tagline():
                 print "Tags: %s" % phrase.get_tagline()
-            print "From: %.2f" % phrase.get_from_position()
-            print "To: %.2f" % phrase.get_to_position()
+            print "From: %.2f" % phrase.from_position
+            print "To: %.2f" % phrase.to_position
             print
-            print phrase.get_comment()
+            print phrase.comment
         else:
             "Phrase not found. Wrong id?"
         metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
         if metronomes:
             ms = metronomes[0]
-            print "Metronome: speed=%d; meter=%d; duration=%d; increment=%d" % (ms.speed, ms.meter, ms.duration, ms.increment)
+            print "Metronome: speed=%d; meter=%d; duration=%d; increment=%d" % (ms.speed, ms.meter, ms.duration, ms.speed_increment)
 
     def reschedule_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
@@ -144,44 +151,58 @@ class TextInterface(object):
             except ValueError:
                 continue
         current_repetition = Repetition()
-        current_repetition.set_date(datetime.date.today())
-        current_repetition.set_grade(grade)
-        current_repetition.set_phrase_id(phrase.id)
+        timestamp = datetime.datetime.utcnow()
+        timestamp = timestamp.replace(tzinfo=utc)
+        current_repetition.timestamp = timestamp
+        current_repetition.grade = grade
+        current_repetition.phrase = phrase
+        current_repetition.pitch = phrase.pitch
+        current_repetition.phrase_speed = phrase.speed
+        
+        if phrase.speed and phrase.speed_increment:
+            phrase.speed += phrase.speed_increment
+            if not self.dbh.updated_phrase(phrase):
+                print "Failed to update phrase: %s" % phrase
+                
+        metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
+        if metronomes:
+            ms = metronomes[0]
+            current_repetition.metronome_speed = ms.speed
+            if ms.speed_increment and ms.speed != 0:
+                ms.speed += ms.speed_increment
+            if not self.dbh.update_metronome_setup(ms):
+                print "Failed to update the metronome setup"
+        else:
+            current_repetition.metronome_speed = 0
 
-        self.dbh.insert_repetition(current_repetition)
+        schedule = scheduler.get_new_schedule(phrase, grade, repetition_list=repetitions)
+        print "Next repetition: %s" % schedule.next_repetition
 
+        self.dbh.insert_schedule(schedule)
+        
         past_schedules = self.dbh.get_schedules_by_phrase_id(phrase_id)
         if past_schedules:
             for schedule in past_schedules:
                 if not self.dbh.remove_schedule(schedule):
                     print "Failed to remove old schedule: %d" % (schedule.id)
+                                
+        self.dbh.insert_repetition(current_repetition)
 
-        schedule = scheduler.get_new_schedule(phrase, grade, repetition_list=repetitions)
-        print "Next repetition: %s" % schedule.get_next_repetition()
-        self.dbh.insert_schedule(schedule)
-
-        metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
-        if metronomes:
-            ms = metronomes[0]
-            if ms.increment and ms.speed != 0:
-                ms.speed += ms.increment
-            if not self.dbh.update_metronome_setup(ms):
-                print "Failed to update the metronome setup"
-
+                
     def show_todo_list(self):
         schedules = self.dbh.get_active_schedules(orderby="next_repetition")
         schedules.reverse()
         for schedule in schedules:
-            phrase = self.dbh.get_phrase_by_id(schedule.get_phrase_id())
+            phrase = schedule.phrase 
             if not phrase:
                 print "Inconsistent database!"
                 return
-            if schedule.get_priority() is not None:
-                priority = "%.1f" % schedule.get_priority()
+            if schedule.priority is not None:
+                priority = "%.1f" % schedule.priority
             else:
                 priority = None
             if priority:
-                description = phrase.get_name()
+                description = phrase.name
                 if not description:
                     description = phrase.get_short_description()
                 print phrase.id, "\t", priority, "\t", phrase.get_filename(path=False), description, "\t", phrase.get_tagline()
@@ -295,9 +316,6 @@ class TextInterface(object):
             print phrase.id, "\t", "DEACTIVATED", "\t", phrase.get_filename(path=False),
             phrase.get_short_description(), "\t", phrase.get_tagline(), '.'
 
-    def init_database(self):
-        self.dbh.init_database()
-
     def show_image(self, phrase, ms):
         sr = SightRead()
         sr.filename = os.path.expanduser(self.config.MUSIC_DIRECTORY + phrase.get_image())
@@ -344,8 +362,8 @@ class TextInterface(object):
     def list_repetitions(self):
         repetitions = self.dbh.get_repetitions()
         for repetition in repetitions:
-            phrase = self.dbh.get_phrase_by_id(repetition.get_phrase_id())
-            print repetition.id, repetition.get_date(), repetition.get_grade(), phrase.get_filename(path=False), phrase.get_short_description()
+            phrase = self.dbh.get_phrase_by_id(repetition.phrase.id)
+            print repetition.id, repetition.timestamp, repetition.grade, phrase.get_filename(path=False), phrase.get_short_description()
 
     def list_metronome_setups(self):
         metronome_setups = self.dbh.get_metronome_setups()
@@ -398,9 +416,6 @@ def main():
                       action="store_true", dest="list_deactivated",
                       help="list phrases deactivated from scheduling")
     
-    parser.add_option('-i', '--init-db', action="store_true",
-                      dest="init_db", help="initialize a new database")
-    
     parser.add_option('-m', '--metronome', action="store",
                       type="int", dest="metronome",
                       help="play metronome associated with the given phrase id")
@@ -444,8 +459,6 @@ def main():
         ti.deactivate_phrase(options.deactivate_phrase)
     elif options.list_deactivated:
         ti.list_deactivated_phrases()
-    elif options.init_db:
-        ti.init_database()
     elif options.metronome:
         ti.play_metronome(options.metronome)
     elif options.list_repetitions:

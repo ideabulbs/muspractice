@@ -1,4 +1,5 @@
 import sys
+import datetime
 import sqlite3
 import libschedule
 import app.models
@@ -69,7 +70,9 @@ class ScheduleHandler(object):
             return Schedule.objects.order_by(orderby)
 
     def get_active_schedules(self):
-        return []
+        inactive_date = datetime.datetime(1970, 1, 1, 23, 59)
+        inactive_date = inactive_date.replace(tzinfo=utc)
+        return Schedule.objects.filter(next_repetition__gt=inactive_date)
 
     def get_inactive_schedules(self):
         return []
@@ -77,21 +80,21 @@ class ScheduleHandler(object):
     
 class PrioritizedScheduleHandler(ScheduleHandler):
 
-        def get_active_schedules(self, orderby=None):
-                schedules = super(PrioritizedScheduleDatabaseHandler, self).get_active_schedules()
-                for schedule in schedules:
-                        ri = libschedule.RepeatableItem()
-                        phrase_id = schedule.get_phrase_id()
-                        item_repetitions = self.get_repetitions_by_phrase_id(phrase_id, orderby='repetition_date')
-                        for item_repetition in item_repetitions:
-                            lsr = libschedule.Repetition()
-                            lsr.repetition_timestamp = float(item_repetition.get_date().strftime("%s"))
-                            ri.repetitions.append(lsr)
-                        ri.next_repetition_timestamp = float(schedule.get_next_repetition().strftime("%s"))
-                        prio = ri.get_priority()
-                        schedule.set_priority(prio)
-                prioritized_list = sorted(schedules, key=lambda x: x.get_priority(), reverse=True)
-                return prioritized_list
+    def get_active_schedules(self, orderby=None):
+        schedules = super(PrioritizedScheduleHandler, self).get_active_schedules()
+        for schedule in schedules:
+            ri = libschedule.RepeatableItem()
+            phrase_id = schedule.phrase.id
+            item_repetitions = self.get_repetitions_by_phrase_id(phrase_id, orderby='timestamp')
+            for item_repetition in item_repetitions:
+                lsr = libschedule.Repetition()
+                lsr.repetition_timestamp = float(item_repetition.timestamp.strftime("%s"))
+                ri.repetitions.append(lsr)
+            ri.next_repetition_timestamp = float(schedule.next_repetition.strftime("%s"))
+            prio = ri.get_priority()
+            schedule.priority = prio
+        prioritized_list = sorted(schedules, key=lambda x: x.priority, reverse=True)
+        return prioritized_list
 
     
 class RepetitionHandler(object):
@@ -150,7 +153,7 @@ class MetronomeSetupHandler(object):
             mss = MetronomeSetup.objects.filter(phrase__id=phrase_id)
         else:
             mss = MetronomeSetup.objects.filter(phrase__id=phrase_id).order_by(orderby)
-        return repetitions
+        return mss
 
     def remove_metronome_setup(self, ms):
         if ms.id is not None:

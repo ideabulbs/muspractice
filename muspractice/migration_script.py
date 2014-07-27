@@ -11,7 +11,7 @@ import datetime
 
 class Migrator(object):
     def __init__(self):
-        self.dbh = PrioritizedScheduleDatabaseHandler(os.path.expanduser('data.db'))
+        self.dbh = PrioritizedScheduleDatabaseHandler(os.path.expanduser('~/sync/Music/bass.db'))
 
     def migrate(self):
         legacy_phrases = self.dbh.get_phrases()
@@ -19,14 +19,15 @@ class Migrator(object):
         for lp in legacy_phrases:
             print lp
             p = Phrase()
+            p.id = lp.id
             p.filename = lp.get_filename()
             p.from_position = lp.get_from_position()
             p.loop = True
             p.pitch = lp.get_pitch()
             p.speed = lp.get_speed()
+            p.speed_increment = 0
             p.to_position = lp.get_to_position()
             p.volume = 100
-
             p.name = lp.get_name()
             p.image = lp.get_image()
             tagline = lp.get_tagline()
@@ -47,6 +48,7 @@ class Migrator(object):
             lms = self.dbh.get_metronome_setups_by_phrase_id(lp.id)
             for lm in lms:
                 ms = MetronomeSetup()
+                ms.id = lm.id
                 ms.duration = lm.duration
                 ms.speed = lm.speed
                 ms.speed_increment = lm.increment
@@ -59,6 +61,7 @@ class Migrator(object):
             for ls in legacy_schedules:
                 print ls
                 s = Schedule()
+                s.id = ls.id
                 next_rep = ls.get_next_repetition()
                 next_rep = datetime.datetime.combine(next_rep, datetime.datetime.min.time())
                 next_rep = next_rep.replace(tzinfo=utc)
@@ -75,6 +78,9 @@ class Migrator(object):
             for lr in legacy_repetitions:
                 print lr
                 r = Repetition()
+                r.id = lr.id
+                print "Old id: %d" % lr.id
+                print "New id: %d" % (r.id)
                 r.grade = lr.get_grade()
                 r.comment = lr.get_comment()
                 if lms:
@@ -85,9 +91,11 @@ class Migrator(object):
                 r.phrase_speed = p.speed
                 r.pitch = p.pitch
                 timestamp = lr.get_date()
+                print "Old date: %s" % lr.get_date()
                 timestamp = datetime.datetime.combine(timestamp, datetime.datetime.min.time())
                 timestamp = timestamp.replace(tzinfo=utc)
                 r.timestamp = timestamp
+                print "New date: %s" % r.timestamp
                 r.save()
                 
 if __name__ == "__main__":
