@@ -109,6 +109,8 @@ class Phrase(Serializable):
             if self._comment:
                     lines = self._comment.split(os.linesep)
                     return lines[0].strip()
+            elif self._name:
+                    return self._name
             else:
                     return ""
 

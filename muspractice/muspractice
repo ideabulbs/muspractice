@@ -41,7 +41,7 @@ class TextInterface(object):
     def list_phrases(self):
         phrases = self.dbh.get_phrases(orderby='id')
         for phrase in phrases:
-            print phrase.id, '\t', phrase.get_filename(path=False), "\t", phrase.get_comment().split(os.linesep)[0], "\t", phrase.get_tagline()
+            print phrase.id, '\t', phrase.get_filename(path=False), "\t", phrase.get_short_description(), "\t", phrase.get_tagline()
 
     def play_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
@@ -112,6 +112,7 @@ class TextInterface(object):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         if phrase:
             print
+            print "Name: %s" % phrase.get_name()
             print "File: %s" % phrase.get_filename()
             if phrase.get_image():
                 print "Image: %s" % phrase.get_image()
@@ -292,8 +293,7 @@ class TextInterface(object):
             if not phrase:
                 print "Inconsistent database!"
                 return
-            print phrase.id, "\t", "DEACTIVATED", "\t", phrase.get_filename(path=False),
-            phrase.get_short_description(), "\t", phrase.get_tagline(), '.'
+            print phrase.id, "\t", "DEACTIVATED", "\t", phrase.get_filename(path=False), phrase.get_short_description(), "\t", phrase.get_tagline(), '.'
 
     def init_database(self):
         self.dbh.init_database()
@@ -345,7 +345,7 @@ class TextInterface(object):
         repetitions = self.dbh.get_repetitions()
         for repetition in repetitions:
             phrase = self.dbh.get_phrase_by_id(repetition.get_phrase_id())
-            print repetition.id, repetition.get_date(), repetition.get_grade(), phrase.get_filename(path=False), phrase.get_short_description()
+            print repetition.id, repetition.get_date(), "\t", repetition.get_grade(), "\t", phrase.id, "\t", phrase.get_filename(path=False), phrase.get_short_description()
 
     def list_metronome_setups(self):
         metronome_setups = self.dbh.get_metronome_setups()
