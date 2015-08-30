@@ -41,7 +41,12 @@ class TextInterface(object):
     def list_phrases(self):
         phrases = self.dbh.get_phrases(orderby='id')
         for phrase in phrases:
-            print phrase.id, '\t', phrase.get_filename(path=False), "\t", phrase.get_short_description(), "\t", phrase.get_tagline()
+            schedules = self.dbh.get_schedules_by_phrase_id(phrase.id, orderby='next_repetition')
+            print phrase.id, '\t', phrase.get_filename(path=False), "\t", phrase.get_short_description(), "\t", phrase.get_tagline(),
+            if schedules:
+                print "\t", schedules[-1].get_next_repetition()
+            else:
+                print
 
     def play_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
