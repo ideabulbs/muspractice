@@ -26,6 +26,12 @@ def main():
     filename = "%s__%s__%s.mp3" % (phrase_id, timestamp, safe_phrase_name)
 
     title = "%s %s (%s)" % (int_phrase_id, phrase_name, timestamp)
+    if os.path.exists('video.rec_id'):
+        with open('video.rec_id') as inp:
+            video_rec_id = inp.read().strip()
+            if video_rec_id:
+                title += " %s" % video_rec_id
+                
     cmd = 'id3v2 -t "%s" record.mp3' % title
     popen = subprocess.Popen(cmd, shell=True)
     popen.communicate()
