@@ -1,0 +1,198 @@
+#!/usr/bin/python
+import datetime
+import subprocess
+import glob
+import os
+import re
+import sys
+from config.config import Config
+from models.dbhandler import PrioritizedScheduleDatabaseHandler
+from models.Schedule import *
+from models.Scheduler import *
+from models.Repetition import *
+from models.MetronomeSetup import *
+from models.IniSerializator import *
+
+
+class YoutubeDownloader(object):
+
+    def __init__(self, url, output_file=None, output_directory="./"):
+        self.url = url
+        self.output_file = output_file
+        self.output_directory = output_directory
+        self.thumbnail_file = None
+        
+    def download(self):
+        orig_mp3_files = glob.glob('%s/*.mp3' % self.output_directory)
+        orig_jpg_files = glob.glob('%s/*.jpg' % self.output_directory)
+
+        cmd = 'youtube-dl --write-thumbnail --restrict-filenames --extract-audio --audio-format mp3 '
+        cmd = cmd + self.url
+        popen = subprocess.Popen(cmd.split())
+        popen.communicate()
+        if popen.returncode != 0:
+            raise RuntimeError("Could not get video/audio from " + self.url)
+        
+        current_mp3_files = glob.glob('%s/*.mp3' % self.output_directory)
+        diff_files = list(set(current_mp3_files) - set(orig_mp3_files))
+        if len(diff_files) == 0:
+            raise RuntimeError("Could not get filename of retrieved mp3 file")
+        output_file = diff_files[0]
+        if self.output_file is not None:
+            os.rename("%s/%s" % (self.output_directory, output_file), "%s/%s" % (self.output_directory, self.output_file))
+        else:
+            self.output_file = output_file
+
+        current_jpg_files = glob.glob('%s/*.jpg' % self.output_directory)
+        diff_files = list(set(current_jpg_files) - set(orig_jpg_files))
+        if len(diff_files) == 0:
+            raise RuntimeError("Could not get filename of retrieved thumbnail file")
+        self.thumbnail_file = diff_files[0]
+
+        # Optional thumbnail rescale:
+        # cmd = "convert -resize 50%% %s %s" % (self.thumbnail_file, self.thumbnail_file + "_resized")
+        # popen = subprocess.Popen(cmd.split())
+        # popen.communicate()
+        # if popen.returncode != 0:
+        #     raise RuntimeError("Could not resize thumbnail " + self.thumbnail_file)
+        # os.unlink(self.thumbnail_file)
+        # os.rename(self.thumbnail_file + "_resized", self.thumbnail_file)
+        
+        return True
+
+class AudioFileCutter(object):
+
+    def __init__(self, filename, start_time="0:00", end_time="0:00"):
+        self.filename = filename
+        self.start_time = start_time
+        self.end_time = end_time
+        self.output_filename = None
+        
+    def cut(self):
+        if self.end_time != "0:00":
+            cmd = "cutmp3 -o cut_out -i %s -a %s -b %s" % (self.filename, self.start_time, self.end_time)
+            popen = subprocess.Popen(cmd.split())
+            popen.communicate()
+            if popen.returncode != 0:
+                raise RuntimeError("Could not cut the file %s" % self.filename)
+            os.rename(self.filename, self.filename + "_old")
+            start_ts = re.sub(":", "_", self.start_time)
+            end_ts = re.sub(":", "_", self.end_time)
+            output_filename = re.sub(".mp3$", "", self.filename)
+            output_filename += "__%s__%s.mp3" % (start_ts, end_ts)
+            os.rename("cut_out0001.mp3", output_filename)
+            os.unlink(self.filename + "_old")
+            self.output_filename = output_filename
+            print "Cut output renamed to %s" % self.output_filename
+        return True
+
+
+class YoutubeFragmentInserter(object):
+    def __init__(self, url, start_time, end_time, tagline):
+        self.url = url
+        self.start_time = start_time
+        self.end_time = end_time
+        self.tagline = tagline
+        config_filename = ".muspracticerc"
+        if os.path.exists('./%s' % config_filename):
+            config_filename = "./%s" % config_filename
+        else:
+            config_filename = "~/%s" % config_filename
+        self.config = Config(config_filename)
+        if self.config.is_new:
+            print "New config has been initialized. Verify settings: %s" % config_filename        
+            sys.exit(0)
+
+        self.dbh = PrioritizedScheduleDatabaseHandler(self.config.DATABASE_FILE)
+
+    def process(self):
+        output_file = "out.mp3"
+        yd = YoutubeDownloader(self.url)
+        yd.download()
+        if yd.output_file is None:
+            raise RuntimeError("Could not get video/audio from Youtube")
+        
+        afc = AudioFileCutter(yd.output_file, self.start_time, self.end_time)
+        if not afc.cut():
+            raise RuntimeError("Could not cut the retrieved audio!")
+
+        music_directory_subtree = "youtube"  # the script will put all mp3 files here
+
+        output_filename = afc.output_filename
+        if output_filename.startswith("./"):
+            output_filename = output_filename[2:]
+        database_dest_file = "%s/%s" % (music_directory_subtree, output_filename)
+        subtree_dest_file = self.config.MUSIC_DIRECTORY + database_dest_file
+        cmd = "mv %s %s" % (output_filename, subtree_dest_file)
+        popen = subprocess.Popen(cmd, shell=True)
+        popen.communicate()
+        if popen.returncode != 0:
+            raise RuntimeError("Could not move file %s to %s" % (afc.output_file, subtree_dest_file))
+        print "MP3 file created: %s" % subtree_dest_file
+
+        thumbnail_image = re.sub(".mp3$", ".jpg", output_filename)
+        database_dest_image = "%s/%s" % (music_directory_subtree, thumbnail_image)
+        subtree_dest_image = self.config.MUSIC_DIRECTORY + database_dest_image
+        cmd = "mv %s %s" % (yd.thumbnail_file, subtree_dest_image)
+        popen = subprocess.Popen(cmd, shell=True)
+        popen.communicate()
+        if popen.returncode != 0:
+            raise RuntimeError("Could not move file %s to %s" % (yd.thumbnail_file, subtree_dest_image))
+        print "Thumbnail file created: %s" % subtree_dest_image
+        
+        tokens = self.start_time.split(":")
+        start_ts = int(tokens[0]) * 60 + int(tokens[1])
+
+        tokens = self.end_time.split(":")
+        end_ts = int(tokens[0]) * 60 + int(tokens[1])
+
+        length = end_ts - start_ts
+        from_position = 0.1
+        end_position = length - 0.1
+        
+        phrase = Phrase()
+        name = re.sub(".mp3$", "", output_filename)
+        phrase.set_name(name)
+        phrase.set_filename(database_dest_file)
+        phrase.set_image(database_dest_image)
+        phrase.set_from_position(from_position)
+        phrase.set_to_position(end_position)
+        phrase.set_tagline(self.tagline)
+        phrase_id = self.dbh.insert_phrase(phrase)
+        if not phrase_id:
+            print "Failed to add phrase to database"
+            return
+        schedule = Schedule()
+        schedule.set_phrase_id(phrase_id)
+        schedule.set_next_repetition(datetime.date.today())
+        schedule_id = self.dbh.insert_schedule(schedule)
+        if not schedule_id:
+            print "Failed to schedule the new phrase"
+            return
+        metronome_setup = MetronomeSetup()
+        metronome_setup.phrase_id = phrase_id
+        metronome_setup.speed = 100
+        metronome_setup.meter = 0
+        metronome_setup.duration = 300
+        metronome_setup.increment = 2
+        metronome_setup_id = self.dbh.insert_metronome_setup(metronome_setup)
+        if not metronome_setup_id:
+            print "Failed to insert metronome setup"
+            return
+        print "Phrase inserted: id=%s" % phrase_id
+
+def main():
+    if len(sys.argv) != 5:
+        print "Usage: yt_insert <url> <tagline> <start_time> <end_time>"
+        print "Example: yt_insert https://www.youtube.com/watch?v=abcdefghij guitar 0:10 0:25"
+        sys.exit(1)
+    url = sys.argv[1]
+    tagline = sys.argv[2]
+    start_time = sys.argv[3]
+    end_time = sys.argv[4]
+    yfi = YoutubeFragmentInserter(url, start_time, end_time, tagline)
+    yfi.process()
+    
+        
+if __name__ == "__main__":
+    main()

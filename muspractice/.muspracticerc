@@ -1,5 +1,5 @@
 [General]
 audiosink = jackaudiosink
-music_directory = ~/repmusic
+music_directory = data/
 database_file = data.db
 temporary_directory = /tmp/
