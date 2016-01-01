@@ -23,6 +23,22 @@ from config.config import Config
 import gobject
 gobject.threads_init()
 
+def create_context(phrase, metronome=None):
+    context = dict()
+    context = {
+        'PHRASE_ID': phrase.id,
+        'PHRASE_NAME': phrase.get_name(),
+        'PHRASE_PITCH': phrase.get_pitch(),
+        'PHRASE_FROM_POSITION': phrase.get_from_position(),
+        'PHRASE_TO_POSITION': phrase.get_to_position(),
+        'PHRASE_FILENAME': phrase.get_filename(),
+        'PHRASE_IMAGE': phrase.get_image()
+        }
+    if metronome is not None:
+        context['PHRASE_METRONOME_SPEED'] = metronome.speed
+    else:
+        context['PHRASE_SPEED'] = phrase.get_speed()        
+    return context
 
 class TextInterface(object):
 
@@ -61,11 +77,9 @@ class TextInterface(object):
         if phrase.get_image():
             sr = self.show_image(phrase, metronome)
 
-        context = {
-            'PHRASE_ID': phrase_id,
-            'PHRASE_NAME': phrase.get_name()
-        }
-        run_hooks('hooks.pre', context=context)
+        context = create_context(phrase)
+        if self.config.RUN_HOOKS == 'y':
+            run_hooks('hooks.pre', context=context)
 
         if phrase.get_filename():
             sink = gst.parse_bin_from_description(self.config.AUDIOSINK, True)
@@ -117,14 +131,15 @@ class TextInterface(object):
                     duration += 1
                     time.sleep(1)
             except KeyboardInterrupt:
-                print "Interrupted"
+                pass
                 
             player.pause()
             
         if phrase.get_image():
             sr.stop()
 
-        run_hooks('hooks.post', context=context)
+        if self.config.RUN_HOOKS == 'y':
+            run_hooks('hooks.post', context=context)
             
     def show_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
@@ -344,11 +359,9 @@ class TextInterface(object):
         if phrase.get_image():
             sr = self.show_image(phrase, ms)
 
-        context = {
-            'PHRASE_ID': phrase_id,
-            'PHRASE_NAME': phrase.get_name()
-        }
-        run_hooks('hooks.pre', context=context)
+        context = create_context(phrase, metronome=ms)
+        if self.config.RUN_HOOKS == 'y':
+            run_hooks('hooks.pre', context=context)
                         
         # if speed is 0, metronome won't be started
         if ms.speed != 0:
@@ -368,7 +381,8 @@ class TextInterface(object):
         if phrase.get_image():
             sr.stop()
 
-        run_hooks('hooks.post', context=context)
+        if self.config.RUN_HOOKS == 'y':
+            run_hooks('hooks.post', context=context)
 
     def list_repetitions(self):
         repetitions = self.dbh.get_repetitions()

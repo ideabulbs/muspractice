@@ -23,6 +23,7 @@ class Config(object):
         self._cfp.set('General', 'music_directory', '~/Music')
         self._cfp.set('General', 'database_file', '~/muspractice/practice_data.db')
         self._cfp.set('General', 'temporary_directory', '/tmp/')
+        self._cfp.set('General', 'run_hooks', 'n')
         with open(self.config_file, 'w') as out:
             self._cfp.write(out)
         return True
@@ -34,6 +35,10 @@ class Config(object):
     @property
     def AUDIOSINK(self):
         return self._cfp.get('General', 'audiosink')
+
+    @property
+    def RUN_HOOKS(self):
+        return self._cfp.get('General', 'run_hooks')
 
     @property
     def MUSIC_DIRECTORY(self):

@@ -26,6 +26,11 @@ def main():
     filename = "%s__%s__%s.mp3" % (phrase_id, timestamp, safe_phrase_name)
 
     title = "%s %s (%s)" % (int_phrase_id, phrase_name, timestamp)
+    if 'PHRASE_METRONOME_SPEED' in os.environ:
+        title += " (%s BPM)" % os.environ['PHRASE_METRONOME_SPEED']
+    elif 'PHRASE_SPEED' in os.environ:
+        title += " (%s%% speed)" % os.environ['PHRASE_SPEED']
+      
     if os.path.exists('video.rec_id'):
         with open('video.rec_id') as inp:
             video_rec_id = inp.read().strip()
@@ -37,6 +42,7 @@ def main():
     popen.communicate()
 
     cmd = "mv record.mp3 ~/archive_muspractice/%s" % filename
+    cmd = "mv record.mp3 ~/tmp/%s" % filename
     popen = subprocess.Popen(cmd, shell=True)
     popen.communicate()
 
