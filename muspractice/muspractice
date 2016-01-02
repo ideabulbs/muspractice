@@ -75,6 +75,7 @@ class TextInterface(object):
         metronome = metronomes[0]
 
         if phrase.get_image():
+            print "Displaying image: %s" % phrase.get_image()
             sr = self.show_image(phrase, metronome)
 
         context = create_context(phrase)
@@ -357,6 +358,7 @@ class TextInterface(object):
         m.set_duration(ms.duration)
 
         if phrase.get_image():
+            print "Displaying image: %s" % phrase.get_image()
             sr = self.show_image(phrase, ms)
 
         context = create_context(phrase, metronome=ms)
