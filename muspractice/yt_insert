@@ -117,33 +117,34 @@ class FragmentSource(object):
         self.get_audio_file()
         self.get_thumbnail_file()
         
-        afc = AudioFileCutter(self.audio_file, self.start_time, self.end_time)
-        if not afc.cut():
-            raise RuntimeError("Could not cut the retrieved audio!")
-
-        output_filename = afc.output_filename
-        if output_filename.startswith("./"):
-            output_filename = output_filename[2:]
-        audio_filename_only = output_filename.split('/')[-1]
-        audio_filename_only = re.sub(' ', '_', audio_filename_only)
-        database_dest_file = "%s/%s" % (self.music_directory_subtree, audio_filename_only)
-        subtree_dest_file = self.config.MUSIC_DIRECTORY + database_dest_file
-        output_filename = re.sub(' ', '\ ', output_filename)
-        cmd = "mv %s %s" % (output_filename, subtree_dest_file)
-        popen = subprocess.Popen(cmd, shell=True)
-        popen.communicate()
-        if popen.returncode != 0:
-            raise RuntimeError("Could not move file %s to %s" % (afc.output_filename, subtree_dest_file))
-        print "MP3 file created: %s" % subtree_dest_file
-
-        if self.thumbnail_file:
-            database_dest_image = "%s/%s" % (self.music_directory_subtree, self.thumbnail_file)
-            subtree_dest_image = self.config.MUSIC_DIRECTORY + database_dest_image
-            cmd = "mv %s %s" % (self.thumbnail_file, subtree_dest_image)
+        if self.audio_file:
+            afc = AudioFileCutter(self.audio_file, self.start_time, self.end_time)
+            if not afc.cut():
+                raise RuntimeError("Could not cut the retrieved audio!")
+            output_filename = afc.output_filename
+            if output_filename.startswith("./"):
+                output_filename = output_filename[2:]
+            audio_filename_only = output_filename.split('/')[-1]
+            audio_filename_only = re.sub(' ', '_', audio_filename_only)
+            database_dest_file = "%s/%s" % (self.music_directory_subtree, audio_filename_only)
+            subtree_dest_file = self.config.MUSIC_DIRECTORY + database_dest_file
+            output_filename = re.sub(' ', '\ ', output_filename)
+            cmd = "mv %s %s" % (output_filename, subtree_dest_file)
             popen = subprocess.Popen(cmd, shell=True)
             popen.communicate()
             if popen.returncode != 0:
-                raise RuntimeError("Could not move file %s to %s" % (yd.thumbnail_file, subtree_dest_image))
+                raise RuntimeError("Could not move file %s to %s" % (afc.output_filename, subtree_dest_file))
+            print "MP3 file created: %s" % subtree_dest_file
+            
+        if self.thumbnail_file:
+            image_filename_only = self.thumbnail_file.split('/')[-1]
+            database_dest_image = "%s/%.2f_%s" % (self.music_directory_subtree, time.time(), image_filename_only)
+            subtree_dest_image = self.config.MUSIC_DIRECTORY + database_dest_image
+            cmd = "cp %s %s" % (self.thumbnail_file, subtree_dest_image)
+            popen = subprocess.Popen(cmd, shell=True)
+            popen.communicate()
+            if popen.returncode != 0:
+                raise RuntimeError("Could not move file %s to %s" % (self.thumbnail_file, subtree_dest_image))
             print "Thumbnail file created: %s" % subtree_dest_image
             
         tokens = self.start_time.split(":")
@@ -157,15 +158,21 @@ class FragmentSource(object):
         end_position = length - 0.1
         
         phrase = Phrase()
-        name = re.sub(".mp3$", "", audio_filename_only)
-        phrase.set_name(name)
-        phrase.set_filename(database_dest_file)
         phrase.set_from_position(from_position)
         phrase.set_to_position(end_position)
         phrase.set_tagline(self.tagline)
+
+        name = ""
+        if self.audio_file:
+            phrase.set_filename(database_dest_file)
+            name = re.sub(".mp3$", "", audio_filename_only)
+        
         if self.thumbnail_file:
             phrase.set_image(database_dest_image)
-                    
+            name = re.sub(".png$", "", image_filename_only)
+
+        phrase.set_name(name)
+                                
         phrase_id = self.dbh.insert_phrase(phrase)
         if not phrase_id:
             print "Failed to add phrase to database"
@@ -214,6 +221,7 @@ class YoutubeFragmentInserter(FragmentSource):
         thumbnail_file = re.sub(".mp3$", ".jpg", self.audio_file)
         if os.path.exists(thumbnail_file):
             self.thumbnail_file = thumbnail_file
+            self.remove_files.append(self.thumbnail_file)
         else:
             self.thumbnail_file = None
 
@@ -233,6 +241,19 @@ class MP3FileInserter(FragmentSource):
     def cleanup(self):
         pass
 
+class PNGFileInserter(FragmentSource):
+
+    def __init__(self, source, tagline):
+        FragmentSource.__init__(self, "00:00", "00:10", tagline)
+        self.source = os.path.expanduser(source)
+        self.music_directory_subtree = "png"
+    
+    def get_audio_file(self):
+        self.audio_file = None
+
+    def get_thumbnail_file(self):
+        self.thumbnail_file = self.source
+        
 def main():
     if len(sys.argv) != 5:
         print "Usage: yt_insert <url/mp3 path> <tagline> <start_time> <end_time>"
@@ -246,6 +267,8 @@ def main():
         inserter = YoutubeFragmentInserter(source, start_time, end_time, tagline)
     elif '.mp3' in source.lower():
         inserter = MP3FileInserter(source, start_time, end_time, tagline)
+    elif '.png' in source.lower():
+        inserter = PNGFileInserter(source, tagline)        
     else:
         print "Could not determine source type"
         sys.exit(1)
