@@ -71,14 +71,15 @@ class AudioFileCutter(object):
         
     def cut(self):
         if self.end_time != "0:00":
-            cmd = "cutmp3 -o cut_out -i %s -a %s -b %s" % (self.filename, self.start_time, self.end_time)
-            popen = subprocess.Popen(cmd.split())
+            cmd = 'cutmp3 -o cut_out -i "%s" -a %s -b %s' % (self.filename, self.start_time, self.end_time)
+            popen = subprocess.Popen(cmd, shell=True)
             popen.communicate()
             if popen.returncode != 0:
                 raise RuntimeError("Could not cut the file %s" % self.filename)
             start_ts = re.sub(":", "_", self.start_time)
             end_ts = re.sub(":", "_", self.end_time)
-            output_filename = re.sub(".mp3$", "", self.filename)
+            filename_only = self.filename.split('/')[-1]
+            output_filename = re.sub(".mp3$", "", filename_only)
             output_filename += "__%s__%s.mp3" % (start_ts, end_ts)
             os.rename("cut_out0001.mp3", output_filename)
             if self.remove_source_filename:
@@ -124,10 +125,11 @@ class FragmentSource(object):
         if output_filename.startswith("./"):
             output_filename = output_filename[2:]
         audio_filename_only = output_filename.split('/')[-1]
+        audio_filename_only = re.sub(' ', '_', audio_filename_only)
         database_dest_file = "%s/%s" % (self.music_directory_subtree, audio_filename_only)
         subtree_dest_file = self.config.MUSIC_DIRECTORY + database_dest_file
+        output_filename = re.sub(' ', '\ ', output_filename)
         cmd = "mv %s %s" % (output_filename, subtree_dest_file)
-        print cmd
         popen = subprocess.Popen(cmd, shell=True)
         popen.communicate()
         if popen.returncode != 0:
