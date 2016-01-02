@@ -62,11 +62,12 @@ class YoutubeDownloader(object):
 
 class AudioFileCutter(object):
 
-    def __init__(self, filename, start_time="0:00", end_time="0:00"):
+    def __init__(self, filename, start_time="0:00", end_time="0:00", remove_source_filename=False):
         self.filename = filename
         self.start_time = start_time
         self.end_time = end_time
         self.output_filename = None
+        self.remove_source_filename = remove_source_filename
         
     def cut(self):
         if self.end_time != "0:00":
@@ -75,24 +76,25 @@ class AudioFileCutter(object):
             popen.communicate()
             if popen.returncode != 0:
                 raise RuntimeError("Could not cut the file %s" % self.filename)
-            os.rename(self.filename, self.filename + "_old")
             start_ts = re.sub(":", "_", self.start_time)
             end_ts = re.sub(":", "_", self.end_time)
             output_filename = re.sub(".mp3$", "", self.filename)
             output_filename += "__%s__%s.mp3" % (start_ts, end_ts)
             os.rename("cut_out0001.mp3", output_filename)
-            os.unlink(self.filename + "_old")
+            if self.remove_source_filename:
+                os.unlink(self.filename)
             self.output_filename = output_filename
             print "Cut output renamed to %s" % self.output_filename
         return True
 
+class FragmentSource(object):
 
-class YoutubeFragmentInserter(object):
-    def __init__(self, url, start_time, end_time, tagline):
-        self.url = url
+    def __init__(self, start_time, end_time, tagline):
         self.start_time = start_time
         self.end_time = end_time
         self.tagline = tagline
+        self.music_directory_subtree = "audio"
+        self.remove_files = []
         config_filename = ".muspracticerc"
         if os.path.exists('./%s' % config_filename):
             config_filename = "./%s" % config_filename
@@ -102,44 +104,46 @@ class YoutubeFragmentInserter(object):
         if self.config.is_new:
             print "New config has been initialized. Verify settings: %s" % config_filename        
             sys.exit(0)
-
         self.dbh = PrioritizedScheduleDatabaseHandler(self.config.DATABASE_FILE)
 
+    def get_audio_file(self):
+        raise NotImplemented
+
+    def get_thumbnail_file(self):
+        raise NotImplemented
+    
     def process(self):
-        output_file = "out.mp3"
-        yd = YoutubeDownloader(self.url)
-        yd.download()
-        if yd.output_file is None:
-            raise RuntimeError("Could not get video/audio from Youtube")
+        self.get_audio_file()
+        self.get_thumbnail_file()
         
-        afc = AudioFileCutter(yd.output_file, self.start_time, self.end_time)
+        afc = AudioFileCutter(self.audio_file, self.start_time, self.end_time)
         if not afc.cut():
             raise RuntimeError("Could not cut the retrieved audio!")
-
-        music_directory_subtree = "youtube"  # the script will put all mp3 files here
 
         output_filename = afc.output_filename
         if output_filename.startswith("./"):
             output_filename = output_filename[2:]
-        database_dest_file = "%s/%s" % (music_directory_subtree, output_filename)
+        audio_filename_only = output_filename.split('/')[-1]
+        database_dest_file = "%s/%s" % (self.music_directory_subtree, audio_filename_only)
         subtree_dest_file = self.config.MUSIC_DIRECTORY + database_dest_file
         cmd = "mv %s %s" % (output_filename, subtree_dest_file)
+        print cmd
         popen = subprocess.Popen(cmd, shell=True)
         popen.communicate()
         if popen.returncode != 0:
-            raise RuntimeError("Could not move file %s to %s" % (afc.output_file, subtree_dest_file))
+            raise RuntimeError("Could not move file %s to %s" % (afc.output_filename, subtree_dest_file))
         print "MP3 file created: %s" % subtree_dest_file
 
-        thumbnail_image = re.sub(".mp3$", ".jpg", output_filename)
-        database_dest_image = "%s/%s" % (music_directory_subtree, thumbnail_image)
-        subtree_dest_image = self.config.MUSIC_DIRECTORY + database_dest_image
-        cmd = "mv %s %s" % (yd.thumbnail_file, subtree_dest_image)
-        popen = subprocess.Popen(cmd, shell=True)
-        popen.communicate()
-        if popen.returncode != 0:
-            raise RuntimeError("Could not move file %s to %s" % (yd.thumbnail_file, subtree_dest_image))
-        print "Thumbnail file created: %s" % subtree_dest_image
-        
+        if self.thumbnail_file:
+            database_dest_image = "%s/%s" % (self.music_directory_subtree, self.thumbnail_file)
+            subtree_dest_image = self.config.MUSIC_DIRECTORY + database_dest_image
+            cmd = "mv %s %s" % (self.thumbnail_file, subtree_dest_image)
+            popen = subprocess.Popen(cmd, shell=True)
+            popen.communicate()
+            if popen.returncode != 0:
+                raise RuntimeError("Could not move file %s to %s" % (yd.thumbnail_file, subtree_dest_image))
+            print "Thumbnail file created: %s" % subtree_dest_image
+            
         tokens = self.start_time.split(":")
         start_ts = int(tokens[0]) * 60 + int(tokens[1])
 
@@ -151,13 +155,15 @@ class YoutubeFragmentInserter(object):
         end_position = length - 0.1
         
         phrase = Phrase()
-        name = re.sub(".mp3$", "", output_filename)
+        name = re.sub(".mp3$", "", audio_filename_only)
         phrase.set_name(name)
         phrase.set_filename(database_dest_file)
-        phrase.set_image(database_dest_image)
         phrase.set_from_position(from_position)
         phrase.set_to_position(end_position)
         phrase.set_tagline(self.tagline)
+        if self.thumbnail_file:
+            phrase.set_image(database_dest_image)
+                    
         phrase_id = self.dbh.insert_phrase(phrase)
         if not phrase_id:
             print "Failed to add phrase to database"
@@ -180,18 +186,69 @@ class YoutubeFragmentInserter(object):
             print "Failed to insert metronome setup"
             return
         print "Phrase inserted: id=%s" % phrase_id
+        self.cleanup()
+        
+    def cleanup(self):
+        for filename in self.remove_files:
+            if os.path.exists(filename):
+                os.unlink(filename)
+                
+class YoutubeFragmentInserter(FragmentSource):
+
+    def __init__(self, url, start_time, end_time, tagline):
+        FragmentSource.__init__(self, start_time, end_time, tagline)
+        self.url = url
+        self.music_directory_subtree = "youtube"  # the script will put all mp3 files here
+
+    def get_audio_file(self):
+        yd = YoutubeDownloader(self.url)
+        yd.download()
+        if yd.output_file is None:
+            raise RuntimeError("Could not get video/audio from Youtube")
+        self.remove_files.append(yd.output_file)
+        self.audio_file = yd.output_file
+
+    def get_thumbnail_file(self):
+        thumbnail_file = re.sub(".mp3$", ".jpg", self.audio_file)
+        if os.path.exists(thumbnail_file):
+            self.thumbnail_file = thumbnail_file
+        else:
+            self.thumbnail_file = None
+
+class MP3FileInserter(FragmentSource):
+
+    def __init__(self, source, start_time, end_time, tagline):
+        FragmentSource.__init__(self, start_time, end_time, tagline)
+        self.source = os.path.expanduser(source)
+        self.music_directory_subtree = "mp3"  # the script will put all mp3 files here
+
+    def get_audio_file(self):
+        self.audio_file = self.source
+
+    def get_thumbnail_file(self):
+        self.thumbnail_file = None
+
+    def cleanup(self):
+        pass
 
 def main():
     if len(sys.argv) != 5:
-        print "Usage: yt_insert <url> <tagline> <start_time> <end_time>"
+        print "Usage: yt_insert <url/mp3 path> <tagline> <start_time> <end_time>"
         print "Example: yt_insert https://www.youtube.com/watch?v=abcdefghij guitar 0:10 0:25"
         sys.exit(1)
-    url = sys.argv[1]
+    source = sys.argv[1]
     tagline = sys.argv[2]
     start_time = sys.argv[3]
     end_time = sys.argv[4]
-    yfi = YoutubeFragmentInserter(url, start_time, end_time, tagline)
-    yfi.process()
+    if 'http' in source and 'youtube.com' in source:
+        inserter = YoutubeFragmentInserter(source, start_time, end_time, tagline)
+    elif '.mp3' in source.lower():
+        inserter = MP3FileInserter(source, start_time, end_time, tagline)
+    else:
+        print "Could not determine source type"
+        sys.exit(1)
+        
+    inserter.process()
     
         
 if __name__ == "__main__":
