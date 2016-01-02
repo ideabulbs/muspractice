@@ -5,6 +5,8 @@ import time
 import datetime
 import re
 import subprocess
+from mutagen.mp3 import MP3
+
 
 def main():
     pid_file = 'recording.pid'
@@ -15,6 +17,13 @@ def main():
             print "Stopping recording in process %d" % pid
             os.kill(pid, signal.SIGINT)
         os.unlink(pid_file)
+
+    audio_file = MP3('record.mp3')
+    if audio_file.info.length < 60:
+        print "Audio recording is too short. Removing..."
+        os.unlink('record.mp3')
+        return
+    
     phrase_id = os.environ['PHRASE_ID']
     int_phrase_id = phrase_id
     phrase_id = int(phrase_id)
@@ -41,8 +50,8 @@ def main():
     popen = subprocess.Popen(cmd, shell=True)
     popen.communicate()
 
+    
     cmd = "mv record.mp3 ~/archive_muspractice/%s" % filename
-    cmd = "mv record.mp3 ~/tmp/%s" % filename
     popen = subprocess.Popen(cmd, shell=True)
     popen.communicate()
 
