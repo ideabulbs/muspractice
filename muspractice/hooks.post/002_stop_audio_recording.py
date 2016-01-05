@@ -19,7 +19,7 @@ def main():
         os.unlink(pid_file)
 
     audio_file = MP3('record.mp3')
-    if audio_file.info.length < 60:
+    if audio_file.info.length < 130:
         print "Audio recording is too short. Removing..."
         os.unlink('record.mp3')
         return
