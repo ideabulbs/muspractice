@@ -63,7 +63,11 @@ class Metronome(object):
             self._metronome_wait.start()
             if not self.wait_for_metronome_port():
                 return False
-            subprocess.Popen(['jack_connect', self.jack_port_name, 'system:playback_2'])
+            popen = subprocess.Popen(['jack_connect', self.jack_port_name, 'system:playback_1'])
+            popen.communicate()
+            
+            popen = subprocess.Popen(['jack_connect', self.jack_port_name, 'system:playback_2'])
+            popen.communicate()
         else:
             self._popen = subprocess.Popen(command, shell=False)
         return True
