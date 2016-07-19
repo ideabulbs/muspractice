@@ -6,6 +6,8 @@ import time
 import datetime
 import random
 import ConfigParser
+import glob
+import mad
 from optparse import OptionParser
 import tools.Pipeline
 from models.dbhandler import PrioritizedScheduleDatabaseHandler
@@ -16,11 +18,28 @@ from models.MetronomeSetup import *
 from models.IniSerializator import *
 from tools.Metronome import Metronome
 from tools.SightRead import SightRead
+from tools.Hook import run_hooks
 from config.config import Config
 
 import gobject
 gobject.threads_init()
 
+def create_context(phrase, metronome=None):
+    context = dict()
+    context = {
+        'PHRASE_ID': phrase.id,
+        'PHRASE_NAME': phrase.get_name(),
+        'PHRASE_PITCH': phrase.get_pitch(),
+        'PHRASE_FROM_POSITION': phrase.get_from_position(),
+        'PHRASE_TO_POSITION': phrase.get_to_position(),
+        'PHRASE_FILENAME': phrase.get_filename(),
+        'PHRASE_IMAGE': phrase.get_image()
+        }
+    if metronome is not None:
+        context['PHRASE_METRONOME_SPEED'] = metronome.speed
+    else:
+        context['PHRASE_SPEED'] = phrase.get_speed()        
+    return context
 
 class TextInterface(object):
 
@@ -57,8 +76,13 @@ class TextInterface(object):
         metronome = metronomes[0]
 
         if phrase.get_image():
+            print "Displaying image: %s" % phrase.get_image()
             sr = self.show_image(phrase, metronome)
-            
+
+        context = create_context(phrase)
+        if self.config.RUN_HOOKS == 'y':
+            run_hooks('hooks.pre', context=context)
+
         if phrase.get_filename():
             sink = gst.parse_bin_from_description(self.config.AUDIOSINK, True)
             player = tools.Pipeline.Pipeline(sink)
@@ -72,13 +96,19 @@ class TextInterface(object):
                 sys.stderr.write("Media file not found: %s\n" % media_file_path)
                 return
 
-            uri = "file://%s" % os.path.expanduser(media_file_path)
+            uri = "file://%s" % os.path.expanduser(os.path.abspath(media_file_path))
             player.reset()
             player.pause()
             player.set_file(uri)
 
             player.set_from_position(phrase.get_from_position())
-            player.set_to_position(phrase.get_to_position())
+
+            # determine mp3 file length if no to_position is definied:
+            to_position = phrase.get_to_position()
+            if to_position == 0.0 and uri.lower().endswith('.mp3'):
+                mf = mad.MadFile(os.path.abspath(media_file_path))
+                to_position = (mf.total_time() / 1000.0) - 0.1
+            player.set_to_position(to_position)
 
             speed = phrase.get_speed()
             if speed > 0:
@@ -95,23 +125,29 @@ class TextInterface(object):
             duration = 0
             repetition = 1
             print "Duration: %d" % metronome.duration
-            while True:
-                position = player.get_position()
-                if not position:
-                    continue
-                if position <= player.get_from_position() or position > player.get_to_position() or duration == 0:
-                    if duration > metronome.duration:
-                        break
-                    print "Repetition %d" % repetition
-                    player.seek(player.get_from_position())
-                    repetition += 1
-                duration += 1
-                time.sleep(1)
+            try:
+                while True:
+                    position = player.get_position()
+                    if not position:
+                        continue
+                    if position <= player.get_from_position() or position > player.get_to_position() or duration == 0:
+                        if duration > metronome.duration:
+                            break
+                        print "Repetition %d" % repetition
+                        player.seek(player.get_from_position())
+                        repetition += 1
+                    duration += 1
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                pass
+                
             player.pause()
             
         if phrase.get_image():
             sr.stop()
 
+        if self.config.RUN_HOOKS == 'y':
+            run_hooks('hooks.post', context=context)
             
     def show_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
@@ -204,7 +240,7 @@ class TextInterface(object):
             metronome_setup = MetronomeSetup()
             metronome_setup.phrase_id = phrase_id
             metronome_setup.speed = 100
-            metronome_setup.meter = 4
+            metronome_setup.meter = 0
             metronome_setup.duration = 300
             metronome_setup.increment = 0
             ms_id = self.dbh.insert_metronome_setup(metronome_setup)
@@ -261,7 +297,7 @@ class TextInterface(object):
         metronome_setup = MetronomeSetup()
         metronome_setup.phrase_id = phrase_id
         metronome_setup.speed = 100
-        metronome_setup.meter = 4
+        metronome_setup.meter = 0
         metronome_setup.duration = 300
         metronome_setup.increment = 2
         metronome_setup_id = self.dbh.insert_metronome_setup(metronome_setup)
@@ -329,14 +365,22 @@ class TextInterface(object):
         m.set_duration(ms.duration)
 
         if phrase.get_image():
+            print "Displaying image: %s" % phrase.get_image()
             sr = self.show_image(phrase, ms)
-            
+
+        context = create_context(phrase, metronome=ms)
+        if self.config.RUN_HOOKS == 'y':
+            run_hooks('hooks.pre', context=context)
+                        
         # if speed is 0, metronome won't be started
         if ms.speed != 0:
             if not m.start():
                 print "Could not start metronome!"
-                
-        time.sleep(ms.duration)
+
+        try:
+            time.sleep(ms.duration)
+        except KeyboardInterrupt:
+            pass
 
         # if speed is 0, metronome wasn't started and doesn't have to be stopped
         if ms.speed != 0:
@@ -345,7 +389,10 @@ class TextInterface(object):
 
         if phrase.get_image():
             sr.stop()
-                
+
+        if self.config.RUN_HOOKS == 'y':
+            run_hooks('hooks.post', context=context)
+
     def list_repetitions(self):
         repetitions = self.dbh.get_repetitions()
         for repetition in repetitions:
