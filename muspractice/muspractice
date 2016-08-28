@@ -422,8 +422,8 @@ class TextInterface(object):
         @param directory: directory path relative to music dir
         """
         path = "%s%s" % (self.config.MUSIC_DIRECTORY, directory)
-        if not os.path.exists(path):
-            print "Could not find specified path!"
+        if not os.path.exists(os.path.expanduser(path)):
+            print "Could not find specified path! Looking in: %s" % path
             return
         self.dbh.bulk_add(directory, self.config, tagline)
 
