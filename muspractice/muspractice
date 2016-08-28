@@ -79,6 +79,11 @@ class TextInterface(object):
             print "Displaying image: %s" % phrase.get_image()
             sr = self.show_image(phrase, metronome)
 
+        if phrase.get_comment():
+            print
+            print phrase.get_comment()
+            print
+
         context = create_context(phrase)
         if self.config.RUN_HOOKS == 'y':
             run_hooks('hooks.pre', context=context)
@@ -368,6 +373,11 @@ class TextInterface(object):
             print "Displaying image: %s" % phrase.get_image()
             sr = self.show_image(phrase, ms)
 
+        if phrase.get_comment():
+            print
+            print phrase.get_comment()
+            print
+            
         context = create_context(phrase, metronome=ms)
         if self.config.RUN_HOOKS == 'y':
             run_hooks('hooks.pre', context=context)
@@ -404,6 +414,14 @@ class TextInterface(object):
         for metronome_setup in metronome_setups:
             phrase = self.dbh.get_phrase_by_id(metronome_setup.phrase_id)
             print metronome_setup.id, metronome_setup.speed, metronome_setup.meter, metronome_setup.duration, phrase.get_filename(path=False), phrase.get_short_description()
+
+    def bulk_add(self, directory):
+        """
+        Add multiple images/sound files to database as phrases
+
+        @param directory: directory path relative to music dir
+        """
+        self.dbh.bulk_add(directory, self.config)
 
 def main():
     parser = OptionParser()
@@ -462,6 +480,10 @@ def main():
     
     parser.add_option('-M', '--list-metronome-setups', action="store_true",
                       dest="list_metronome_setups", help="list metronome setups")
+
+    parser.add_option('-b', '--bulk-add', action="store",
+                      type="str", dest="bulk_add",
+                      help="bulk add images/sound files as phrases")
     
     (options, args) = parser.parse_args()
       
@@ -504,6 +526,8 @@ def main():
         ti.list_repetitions()
     elif options.list_metronome_setups:
         ti.list_metronome_setups()
+    elif options.bulk_add:
+        ti.bulk_add(options.bulk_add)
     else:
         parser.print_help()
 

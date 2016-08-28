@@ -1,6 +1,8 @@
 import sys
+import glob
 import sqlite3
 import libschedule
+from config.config import Config
 from models.Phrase import *
 from models.Schedule import *
 from models.Repetition import *
@@ -331,7 +333,101 @@ class MetronomeSetupHandler(AbstractDatabaseHandler):
 		self._con.commit()
 		return True
 
-class DatabaseHandler(PhraseHandler, ScheduleHandler, RepetitionHandler, MetronomeSetupHandler):
+
+class BulkPhraseHandler(object):
+
+    def sound_present(self, filename):
+		self._cur.execute("SELECT * FROM Phrases WHERE filename='%s'" % (filename))
+		data = self._cur.fetchone()
+		return data
+
+    def image_present(self, image):
+		self._cur.execute("SELECT * FROM Phrases WHERE image='%s'" % (image))
+		data = self._cur.fetchone()
+		return data
+    
+    def bulk_add(self, directory, config):
+        directory = os.path.expanduser(config.MUSIC_DIRECTORY) + directory
+        image_files = glob.glob('%s/*.png' % directory)
+        sound_files = glob.glob('%s/*.mp3' % directory)
+        tagline = "test bulk"
+
+        grouped_files = dict()
+        for item in image_files + sound_files:
+            item = item.replace(os.path.expanduser(config.MUSIC_DIRECTORY), '')
+            key = item[:-4]
+            if key not in grouped_files.keys():
+                grouped_files[key] = []
+            grouped_files[key].append(item)
+
+        inserted_items = []
+        item_keys = sorted(grouped_files)
+        item_keys.reverse()
+        for key in item_keys:
+            items = grouped_files[key]
+            image = None
+            sound = None
+            for item in items:
+                if item.lower().endswith('.png'):
+                    image = item
+                elif item.lower().endswith('.mp3'):
+                    sound = item
+
+            if image is not None and self.image_present(image):
+                print "Image already added: %s. Skipping..." % image
+                continue
+            if sound is not None and self.sound_present(sound):
+                print "Sound already added: %s. Skipping..." % sound
+                continue
+            if image is None and sound is None:
+                print "No image/sound recognized for item: %s" % key
+                continue
+                
+            phrase = Phrase()
+            phrase.set_name(key)
+            if sound is not None:
+                phrase.set_filename(sound)
+            if image is not None:
+                phrase.set_image(image)
+            phrase.set_tagline(tagline)
+            phrase.set_from_position(0.0)
+            phrase.set_to_position(0.0)
+            phrase.set_loop(True)
+            phrase.set_speed(100)
+            phrase.set_pitch(0)
+            phrase.set_comment('')            
+            phrase_id = self.insert_phrase(phrase)
+            if not phrase_id:
+                print "Failed to add phrase to database"
+                return
+            schedule = Schedule()
+            schedule.set_phrase_id(phrase_id)
+            schedule.set_next_repetition(datetime.date.today())
+            schedule_id = self.insert_schedule(schedule)
+            if not schedule_id:
+                print "Failed to schedule the new phrase"
+                return
+            metronome_setup = MetronomeSetup()
+            metronome_setup.phrase_id = phrase_id
+            metronome_setup.speed = 100
+            metronome_setup.meter = 0
+            metronome_setup.duration = 300
+            metronome_setup.increment = 2
+            metronome_setup_id = self.insert_metronome_setup(metronome_setup)
+            if not metronome_setup_id:
+                print "Failed to insert metronome setup"
+                return
+            inserted_items.append(key)
+
+        if inserted_items:
+            print "Inserted items"
+            for item in inserted_items:
+                print item
+        else:
+            print "No items inserted"
+
+
+class DatabaseHandler(PhraseHandler, ScheduleHandler, RepetitionHandler, MetronomeSetupHandler, BulkPhraseHandler):
 	pass
 
 

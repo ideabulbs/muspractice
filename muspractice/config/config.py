@@ -53,3 +53,7 @@ class Config(object):
         if not directory.endswith(os.sep):
             directory += os.sep
         return directory
+
+    @property
+    def RUN_HOOKS(self):
+        return self._cfp.get('General', 'run_hooks')
