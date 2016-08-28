@@ -1,8 +1,9 @@
 import subprocess
 import os
+import shutil
 from models.dbhandler import *
 from helper import Helper
-
+from config.config import Config
 
 class FunctionalBase(Helper):
 
@@ -52,7 +53,7 @@ class FunctionalBase(Helper):
             
     def run_program(self, keys):
         cmd = "./muspractice %s" % keys
-        popen = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        popen = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = popen.communicate()
         if popen.returncode != 0:
                 print stderr
@@ -96,6 +97,7 @@ class TestFunctional(FunctionalBase):
     remove_files = []
     
     def teardown(self):
+        FunctionalBase.teardown(self)
         if self.remove_files:
             for f in self.remove_files:
                 if os.path.exists(f):
@@ -234,3 +236,48 @@ class TestFunctional(FunctionalBase):
         stdout, stderr = self.run_program(keys)
         current_phrase_list_length = len(stdout.strip().split(os.linesep))
         assert current_phrase_list_length == phrase_count
+
+        
+class TestBulkAdd(FunctionalBase):
+
+    remove_files = []
+    remove_directories = []
+    
+    def teardown(self):
+        FunctionalBase.teardown(self)
+        if self.remove_files:
+            for f in self.remove_files:
+                if os.path.exists(f):
+                    os.unlink(f)
+            del self.remove_files[:]
+            
+        if self.remove_directories:
+            for d in self.remove_directories:
+                if os.path.exists(d):
+                    shutil.rmtree(d)
+            del self.remove_directories[:]
+
+    def test_bulk_add(self):
+        """
+        Add 3 files in bulk mode and verify that they are added
+        """
+        config = Config('.muspracticerc')
+        rel_dir = 'testdir'
+        full_path = '%s%s' % (config.MUSIC_DIRECTORY, rel_dir)
+        self.remove_directories.append(full_path)
+        if not os.path.exists(full_path):
+            os.mkdir(full_path)            
+        cmds = ["touch %s/001.png" % full_path,
+                "touch %s/002.png" % full_path,
+                "touch %s/003.png" % full_path]
+        for cmd in cmds:
+            popen = subprocess.Popen(cmd, shell=True)
+            popen.communicate()
+            if popen.returncode != 0:
+                raise RuntimeError('Could not execute command %s' % cmd)
+        initial_phrase_count = self.get_phrase_list_length()
+        keys = '-d %s -b %s --tagline "test tags"' % (self.dbfile, rel_dir)
+        stdout, stderr = self.run_program(keys)
+        current_phrase_count = self.get_phrase_list_length()
+        assert current_phrase_count == initial_phrase_count + 3
+        

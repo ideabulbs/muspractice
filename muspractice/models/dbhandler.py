@@ -346,11 +346,10 @@ class BulkPhraseHandler(object):
 		data = self._cur.fetchone()
 		return data
     
-    def bulk_add(self, directory, config):
+    def bulk_add(self, directory, config, tagline):
         directory = os.path.expanduser(config.MUSIC_DIRECTORY) + directory
         image_files = glob.glob('%s/*.png' % directory)
         sound_files = glob.glob('%s/*.mp3' % directory)
-        tagline = "test bulk"
 
         grouped_files = dict()
         for item in image_files + sound_files:

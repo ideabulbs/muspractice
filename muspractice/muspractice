@@ -415,13 +415,18 @@ class TextInterface(object):
             phrase = self.dbh.get_phrase_by_id(metronome_setup.phrase_id)
             print metronome_setup.id, metronome_setup.speed, metronome_setup.meter, metronome_setup.duration, phrase.get_filename(path=False), phrase.get_short_description()
 
-    def bulk_add(self, directory):
+    def bulk_add(self, directory, tagline):
         """
         Add multiple images/sound files to database as phrases
 
         @param directory: directory path relative to music dir
         """
-        self.dbh.bulk_add(directory, self.config)
+        path = "%s%s" % (self.config.MUSIC_DIRECTORY, directory)
+        if not os.path.exists(path):
+            print "Could not find specified path!"
+            return
+        self.dbh.bulk_add(directory, self.config, tagline)
+
 
 def main():
     parser = OptionParser()
@@ -484,6 +489,10 @@ def main():
     parser.add_option('-b', '--bulk-add', action="store",
                       type="str", dest="bulk_add",
                       help="bulk add images/sound files as phrases")
+
+    parser.add_option('--tagline', action="store",
+                      type="str", dest="bulk_add_tagline",
+                      help="Tag line for items added in bulk")
     
     (options, args) = parser.parse_args()
       
@@ -527,7 +536,10 @@ def main():
     elif options.list_metronome_setups:
         ti.list_metronome_setups()
     elif options.bulk_add:
-        ti.bulk_add(options.bulk_add)
+        if options.bulk_add_tagline is None:
+            print "Use --tagline argument to specify tags for the items added in bulk!"
+            sys.exit(1)
+        ti.bulk_add(options.bulk_add, options.bulk_add_tagline)
     else:
         parser.print_help()
 
