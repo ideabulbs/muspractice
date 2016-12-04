@@ -113,6 +113,9 @@ class TextInterface(object):
             if to_position == 0.0 and uri.lower().endswith('.mp3'):
                 mf = mad.MadFile(os.path.abspath(media_file_path))
                 to_position = (mf.total_time() / 1000.0) - 0.1
+            elif to_position < 0.0 and uri.lower().endswith('.mp3'):
+                mf = mad.MadFile(os.path.abspath(media_file_path))
+                to_position = (mf.total_time() / 1000.0) - (to_position * (-1))
             player.set_to_position(to_position)
 
             speed = phrase.get_speed()
@@ -422,8 +425,8 @@ class TextInterface(object):
         @param directory: directory path relative to music dir
         """
         path = "%s%s" % (self.config.MUSIC_DIRECTORY, directory)
-        if not os.path.exists(path):
-            print "Could not find specified path!"
+        if not os.path.exists(os.path.expanduser(path)):
+            print "Could not find specified path! Looking in: %s" % path
             return
         self.dbh.bulk_add(directory, self.config, tagline)
 
