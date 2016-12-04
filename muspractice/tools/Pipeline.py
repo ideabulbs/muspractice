@@ -1,6 +1,8 @@
 import sys
 #import pygst
-import gst
+import gi
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst as gst
 import mad
 #pygst.require('0.10')
 import re
@@ -11,7 +13,7 @@ sys.argv = []
 sys.argv = argv
 
 #from playitslowly import mygtk
-TIME_FORMAT = gst.Format(gst.FORMAT_TIME)
+TIME_FORMAT = gst.Format(gst.Format.TIME)
 
 _ = lambda x: x
 
