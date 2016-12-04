@@ -1,0 +1,9 @@
+{
+    "history_length": 400,
+    "tag_weights": {
+	"altpick": 0.10,
+	"rhythm": 0.10,
+	"wyatt": 0.10
+    }
+    
+}

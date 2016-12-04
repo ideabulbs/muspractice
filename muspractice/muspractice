@@ -410,7 +410,7 @@ class TextInterface(object):
         repetitions = self.dbh.get_repetitions()
         for repetition in repetitions:
             phrase = self.dbh.get_phrase_by_id(repetition.get_phrase_id())
-            print repetition.id, repetition.get_date(), "\t", repetition.get_grade(), "\t", phrase.id, "\t", phrase.get_filename(path=False), phrase.get_short_description()
+            print repetition.id, repetition.get_date(), "\t", repetition.get_grade(), "\t", phrase.id, "\t", phrase.get_filename(path=False), phrase.get_short_description(), ":::%s:::" % phrase.get_tagline()
 
     def list_metronome_setups(self):
         metronome_setups = self.dbh.get_metronome_setups()
