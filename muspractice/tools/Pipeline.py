@@ -6,6 +6,7 @@ import mad
 import re
 import os
 
+
 GObject.threads_init()
 Gst.init(None)
 
@@ -142,6 +143,24 @@ class Pipeline(PipelineBase):
 	except Exception:
 	    return None
 
+    def get_from_position(self):
+        return self._from_position
+    
+    def set_from_position(self, position):
+        self._from_position = position
+
+    def get_to_position(self):
+        return self._to_position
+
+    def set_to_position(self, position):
+        self._to_position = position
+
+    def set_loop(self, loop):
+        self._loop = loop
+
+    def get_loop(self):
+        return self._loop
+
     def play(self):
         PipelineBase.play(self)
         self._paused = False
@@ -156,6 +175,9 @@ class Pipeline(PipelineBase):
     def is_playing(self):
 	return not self.is_paused()
 
+    def seek_simple(self, pos=0):
+        pos = self.pipe_time(pos)
+        self.playbin.seek_simple(TIME_FORMAT, Gst.SeekFlags.FLUSH, pos or 0)
 
 if __name__ == "__main__":
     import time
