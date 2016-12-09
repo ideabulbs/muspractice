@@ -1,7 +1,14 @@
 {
     "history_length": 400,
     "tag_weights": {
+	"vocal": 0.20,
+	"repertoire": 0.10,
 	"altpick": 0.10,
+	"scale": 0.10,
+	"sweep": 0.10,
+	"legato": 0.10,
+	"tapping": 0.10,
+	"chords": 0.10,
 	"rhythm": 0.10,
 	"wyatt": 0.10
     }

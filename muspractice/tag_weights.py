@@ -44,7 +44,17 @@ def get_tag_weights(phrase_tag_list):
     for tag, reps in result.iteritems():
         result[tag] = reps / float(total_repetition_count)
     return result
-                
+
+def print_weights(sorted_diff, limit=None):
+    out = ""
+    list_range = sorted_diff
+    if limit is not None:
+        list_range = sorted_diff[:limit]
+
+    for item in list_range:
+        out += "%s:%.2f " % (item[0], item[1])
+    print out
+
 def main():
     data = get_data()
     current_weights = get_tag_weights(data)
@@ -59,7 +69,12 @@ def main():
 
     sorted_diff = sorted(diff_dict.items(), key=operator.itemgetter(1))
     sorted_diff.reverse()
-    print sorted_diff
+    
+    if len(sorted_diff) > 3:
+        limit = 3
+    else:
+        limit = None
+    print_weights(sorted_diff, limit=limit)
 
 
 if __name__ == '__main__':
