@@ -4,13 +4,14 @@ gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject
 import mad
 import re
+import os
 
 GObject.threads_init()
 Gst.init(None)
 
 TIME_FORMAT = Gst.Format(Gst.Format.TIME)
 
-class Pipeline(Gst.Pipeline):
+class PipelineBase(Gst.Pipeline):
 
     def __init__(self, sink):
         Gst.Pipeline.__init__(self)
@@ -115,10 +116,10 @@ class Pipeline(Gst.Pipeline):
         self.set_state(Gst.State.READY)
 
 
-class ExtendedPipeline(Pipeline):
+class Pipeline(PipelineBase):
 
     def __init__(self, sink):
-        Pipeline.__init__(self, sink)
+        PipelineBase.__init__(self, sink)
         self._paused = True
         self._loop = False
         self._from_position = 0
@@ -142,28 +143,28 @@ class ExtendedPipeline(Pipeline):
 	    return None
 
     def play(self):
-        Pipeline.play(self)
+        PipelineBase.play(self)
         self._paused = False
 
     def pause(self):
-        Pipeline.pause(self)
+        PipelineBase.pause(self)
         self._paused = True
 
     def is_paused(self):
 	return self._paused
 
     def is_playing(self):
-	if not self.is_paused():
-	    return True
-	else:
-	    return False
+	return not self.is_paused()
 
 
 if __name__ == "__main__":
     import time
-    pl = ExtendedPipeline('alsasink')
+    pl = Pipeline('jackaudiosink')
     pl.reset()
-    pl.set_file('file:///home/arilou649/git/muspractice/muspractice/test/data/music2.mp3')
+    path = 'file://%stest/data/music.mp3' % os.getcwd()
+    path = 'file:///home/user/shared/repmusic/rock/burn.mp3'
+    print "Playing", path
+    pl.set_file(path)
     pl.play()
     time.sleep(2)
     print 'Position', pl.get_position()
