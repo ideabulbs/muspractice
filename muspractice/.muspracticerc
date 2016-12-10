@@ -1,6 +1,6 @@
 [General]
 audiosink = jackaudiosink
 music_directory = test/data
-database_file = ~/bass.db
+database_file = data.db
 temporary_directory = /tmp/
 run_hooks = n
