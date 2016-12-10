@@ -1,17 +1,43 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import subprocess
+import os
 import re
 import json
 import operator
 
+CONFIG_FILENAME = '.muspractice_tag_weights'
+LOCAL_CONFIG_FILENAME = '%s/%s' % (os.getcwd(), CONFIG_FILENAME)
+GLOBAL_CONFIG_FILENAME = '%s/%s' % (os.environ['HOME'], CONFIG_FILENAME)
+
+def get_config_path():
+    """
+    Find appropriate config file with target tag weights. Local file
+    in the current directory will override the global file in home
+    directory.
+
+    Filenames:
+    - .muspractice_tag_weights (current working directory)
+    - ~/.muspractice_tag_weights (global)
+    """
+    if os.path.exists(LOCAL_CONFIG_FILENAME):
+        return LOCAL_CONFIG_FILENAME
+    elif os.path.exists(GLOBAL_CONFIG_FILENAME):
+        return GLOBAL_CONFIG_FILENAME
+    return None
+
 def get_config():
-    with open('.muspractice_tag_weights.json', 'r') as inp:
+    """Read target weights from config file"""
+    config_file = get_config_path()
+    if not config_file:
+        raise RuntimeError('Could not find tag weight config: either %s or %s' % (LOCAL_CONFIG_FILENAME, GLOBAL_CONFIG_FILENAME))
+    with open(config_file, 'r') as inp:
         config_dict = json.load(inp)
     return config_dict
 
 CONFIG = get_config()
 
 def get_data():
+    """Read repetition data from muspractice"""
     cmd = "python muspractice -R | tail -n %s" % CONFIG['history_length']
     popen = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = popen.communicate()
@@ -24,6 +50,7 @@ def get_data():
     return result
 
 def get_unique_tags(phrase_tag_list):
+    """Create a list of unique tags"""
     unique_tags = []
     for item in phrase_tag_list:
         for tag in item:
@@ -32,6 +59,7 @@ def get_unique_tags(phrase_tag_list):
     return unique_tags
 
 def get_tag_weights(phrase_tag_list):
+    """Calculate current tag weights in the repetition data"""
     unique_tags = get_unique_tags(phrase_tag_list)
     total_repetition_count = len(phrase_tag_list)
     result = dict()
@@ -46,6 +74,7 @@ def get_tag_weights(phrase_tag_list):
     return result
 
 def print_weights(sorted_diff, limit=None):
+    """Print the calculated weights"""
     out = ""
     list_range = sorted_diff
     if limit is not None:
@@ -56,6 +85,7 @@ def print_weights(sorted_diff, limit=None):
     print out
 
 def main():
+    """main"""
     data = get_data()
     current_weights = get_tag_weights(data)
     target_weights = CONFIG['tag_weights']
