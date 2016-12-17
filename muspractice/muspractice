@@ -24,6 +24,7 @@ from config.config import Config
 import gobject
 gobject.threads_init()
 
+
 def create_context(phrase, metronome=None):
     context = dict()
     context = {
@@ -41,20 +42,19 @@ def create_context(phrase, metronome=None):
         context['PHRASE_SPEED'] = phrase.get_speed()        
     return context
 
+
 class TextInterface(object):
+    '''muspractice text console UI'''
 
     def __init__(self):
-        config_filename = ".muspracticerc"
-        if os.path.exists('./%s' % config_filename):
-            config_filename = "./%s" % config_filename
-        else:
-            config_filename = "~/%s" % config_filename
-        self.config = Config(config_filename)
+        '''Constructor'''
+        self.config = Config()
         if self.config.is_new:
             print "New config has been initialized. Verify settings: %s" % config_filename        
             sys.exit(0)
-            
+
     def init_dbhandler(self, database):
+        '''Initialize database handler'''
         self.dbh = PrioritizedScheduleDatabaseHandler(database)
                         
     def list_phrases(self):

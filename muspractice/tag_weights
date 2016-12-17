@@ -6,6 +6,7 @@ import json
 import operator
 import sys
 import math
+from config.config import Config as MuspracticeConfig
 
 
 CONFIG_FILENAME = '.muspractice_tag_weights'
@@ -53,7 +54,8 @@ CONFIG = get_config()
 
 def get_data():
     """Read repetition data from muspractice"""
-    cmd = "python muspractice -R | tail -n %s" % CONFIG['history_length']
+    muspractice_config = MuspracticeConfig()
+    cmd = "python muspractice -d %s -R | tail -n %s" % (muspractice_config.DATABASE_FILE, CONFIG['history_length'])
     popen = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = popen.communicate()
     result = []

@@ -1,16 +1,11 @@
 {
     "history_length": 400,
     "tag_weights": {
-	"vocal": 0.19,
-	"repertoire": 0.09,
-	"altpick": 0.09,
-	"scale": 0.09,
-	"sweep": 0.09,
-	"legato": 0.09,
-	"tapping": 0.09,
-	"chords": 0.09,
-	"rhythm": 0.09,
-	"phrasing": 0.09
+	"songs": 0.20,
+	"solos": 0.20,
+	"improvisation": 0.20,
+	"scales": 0.20,
+	"arpeggios": 0.20
     }
     
 }
