@@ -1,16 +1,16 @@
 {
     "history_length": 400,
     "tag_weights": {
-	"vocal": 0.20,
-	"repertoire": 0.10,
-	"altpick": 0.10,
-	"scale": 0.10,
-	"sweep": 0.10,
-	"legato": 0.10,
-	"tapping": 0.10,
-	"chords": 0.10,
-	"rhythm": 0.10,
-	"phrasing": 0.10
+	"vocal": 0.19,
+	"repertoire": 0.09,
+	"altpick": 0.09,
+	"scale": 0.09,
+	"sweep": 0.09,
+	"legato": 0.09,
+	"tapping": 0.09,
+	"chords": 0.09,
+	"rhythm": 0.09,
+	"phrasing": 0.09
     }
     
 }

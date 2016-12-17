@@ -4,6 +4,9 @@ import os
 import re
 import json
 import operator
+import sys
+import math
+
 
 CONFIG_FILENAME = '.muspractice_tag_weights'
 LOCAL_CONFIG_FILENAME = '%s/%s' % (os.getcwd(), CONFIG_FILENAME)
@@ -19,6 +22,9 @@ def get_config_path():
     - .muspractice_tag_weights (current working directory)
     - ~/.muspractice_tag_weights (global)
     """
+    if len(sys.argv) > 1:
+        return sys.argv[1]
+
     if os.path.exists(LOCAL_CONFIG_FILENAME):
         return LOCAL_CONFIG_FILENAME
     elif os.path.exists(GLOBAL_CONFIG_FILENAME):
@@ -28,10 +34,19 @@ def get_config_path():
 def get_config():
     """Read target weights from config file"""
     config_file = get_config_path()
-    if not config_file:
-        raise RuntimeError('Could not find tag weight config: either %s or %s' % (LOCAL_CONFIG_FILENAME, GLOBAL_CONFIG_FILENAME))
+    if not config_file or not os.path.exists(config_file):
+        raise RuntimeError('Could not find tag weight config: %s' % (config_file))
     with open(config_file, 'r') as inp:
         config_dict = json.load(inp)
+
+    # check that total sum of all weights is 1.0 (for consistent results)
+    weight_sum = 0
+    for tag in config_dict['tag_weights'].keys():
+        weight_sum += config_dict['tag_weights'][tag]
+
+    if abs(weight_sum - 1.0) > 0.001:
+        print('The sum of all target weights in config file %s should be 1.0. Current sum: %f. Please adjust the target weights.' % (config_file, weight_sum))
+        sys.exit(1)
     return config_dict
 
 CONFIG = get_config()
@@ -73,7 +88,7 @@ def get_tag_weights(phrase_tag_list):
         result[tag] = reps / float(total_repetition_count)
     return result
 
-def print_weights(sorted_diff, limit=None):
+def print_weights(sorted_diff, history_length, limit=None):
     """Print the calculated weights"""
     out = ""
     list_range = sorted_diff
@@ -81,7 +96,9 @@ def print_weights(sorted_diff, limit=None):
         list_range = sorted_diff[:limit]
 
     for item in list_range:
-        out += "%s:%.2f " % (item[0], item[1])
+        additional_reps = history_length * item[1]
+        out += "%s:-%d " % (item[0], math.ceil(additional_reps))
+    print "Categories that need more repetitions:"
     print out
 
 def main():
@@ -104,7 +121,7 @@ def main():
         limit = 3
     else:
         limit = None
-    print_weights(sorted_diff, limit=limit)
+    print_weights(sorted_diff, CONFIG['history_length'], limit=limit)
 
 
 if __name__ == '__main__':
