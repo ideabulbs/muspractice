@@ -97,7 +97,7 @@ def print_weights(sorted_diff, history_length, limit=None):
 
     for item in list_range:
         additional_reps = history_length * item[1]
-        out += "%s:-%d " % (item[0], math.ceil(additional_reps))
+        out += "%s:%d " % (item[0], math.ceil(additional_reps) * (-1))
     print "Categories that need more repetitions:"
     print out
 
