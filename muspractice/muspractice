@@ -1,5 +1,4 @@
 #!/usr/bin/python
-import gst
 import sys
 import os
 import time
@@ -21,8 +20,6 @@ from tools.SightRead import SightRead
 from tools.Hook import run_hooks
 from config.config import Config
 
-import gobject
-gobject.threads_init()
 
 
 def create_context(phrase, metronome=None):
@@ -89,8 +86,7 @@ class TextInterface(object):
             run_hooks('hooks.pre', context=context)
 
         if phrase.get_filename():
-            sink = gst.parse_bin_from_description(self.config.AUDIOSINK, True)
-            player = tools.Pipeline.Pipeline(sink)
+            player = tools.Pipeline.Pipeline(self.config.AUDIOSINK)
 
             if phrase.get_filename().startswith(os.sep):  # absolute path given
                 media_file_path = phrase.get_filename()
@@ -100,12 +96,11 @@ class TextInterface(object):
             if not os.path.exists(media_file_path):
                 sys.stderr.write("Media file not found: %s\n" % media_file_path)
                 return
+            else:
+                print "Media file found: %s " % media_file_path
 
             uri = "file://%s" % os.path.expanduser(os.path.abspath(media_file_path))
-            player.reset()
-            player.pause()
             player.set_file(uri)
-
             player.set_from_position(phrase.get_from_position())
 
             # determine mp3 file length if no to_position is definied:
@@ -142,7 +137,7 @@ class TextInterface(object):
                         if duration > metronome.duration:
                             break
                         print "Repetition %d" % repetition
-                        player.seek(player.get_from_position())
+                        player.seek_simple(player.get_from_position())
                         repetition += 1
                     duration += 1
                     time.sleep(1)
