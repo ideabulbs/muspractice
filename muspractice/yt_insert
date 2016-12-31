@@ -5,6 +5,7 @@ import glob
 import os
 import re
 import sys
+import shutil
 from config.config import Config
 from models.dbhandler import PrioritizedScheduleDatabaseHandler
 from models.Schedule import *
@@ -72,9 +73,11 @@ class AudioFileCutter(object):
     def cut(self):
         if self.end_time != "0:00":
             cmd = 'cutmp3 -o cut_out -i "%s" -a %s -b %s' % (self.filename, self.start_time, self.end_time)
-            popen = subprocess.Popen(cmd, shell=True)
-            popen.communicate()
+            popen = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = popen.communicate()
             if popen.returncode != 0:
+                print stdout
+                print stderr
                 raise RuntimeError("Could not cut the file %s" % self.filename)
             start_ts = re.sub(":", "_", self.start_time)
             end_ts = re.sub(":", "_", self.end_time)
@@ -85,7 +88,6 @@ class AudioFileCutter(object):
             if self.remove_source_filename:
                 os.unlink(self.filename)
             self.output_filename = output_filename
-            print "Cut output renamed to %s" % self.output_filename
         return True
 
 class FragmentSource(object):
@@ -128,12 +130,7 @@ class FragmentSource(object):
             audio_filename_only = re.sub(' ', '_', audio_filename_only)
             database_dest_file = "%s/%s" % (self.music_directory_subtree, audio_filename_only)
             subtree_dest_file = self.config.MUSIC_DIRECTORY + database_dest_file
-            output_filename = re.sub(' ', '\ ', output_filename)
-            cmd = "mv %s %s" % (output_filename, subtree_dest_file)
-            popen = subprocess.Popen(cmd, shell=True)
-            popen.communicate()
-            if popen.returncode != 0:
-                raise RuntimeError("Could not move file %s to %s" % (afc.output_filename, subtree_dest_file))
+            os.rename(output_filename, subtree_dest_file)
             print "MP3 file created: %s" % subtree_dest_file
             
         if self.thumbnail_file:
