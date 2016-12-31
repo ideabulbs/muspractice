@@ -130,7 +130,9 @@ class FragmentSource(object):
             audio_filename_only = re.sub(' ', '_', audio_filename_only)
             database_dest_file = "%s/%s" % (self.music_directory_subtree, audio_filename_only)
             subtree_dest_file = self.config.MUSIC_DIRECTORY + database_dest_file
-            os.rename(output_filename, subtree_dest_file)
+            with open(os.path.expanduser(subtree_dest_file), 'wb') as out:
+                data = open(output_filename, 'rb').read()
+                out.write(data)
             print "MP3 file created: %s" % subtree_dest_file
             
         if self.thumbnail_file:
