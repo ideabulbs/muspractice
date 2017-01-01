@@ -154,7 +154,7 @@ class FragmentSource(object):
 
         length = end_ts - start_ts
         from_position = 0.1
-        end_position = length - 0.1
+        end_position = length - 0.2  # otherwise gstreamer might stuck if the length is slightly different
         
         phrase = Phrase()
         phrase.set_from_position(from_position)
