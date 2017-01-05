@@ -4,7 +4,7 @@ import os
 import math
 import mad
 import sys
-
+from tools.xsc import XSCReader
 
 def main():
     if not len(sys.argv) == 3:
