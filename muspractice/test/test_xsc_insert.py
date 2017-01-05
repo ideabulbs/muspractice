@@ -18,17 +18,17 @@ class TestXSCReader(object):
         first_section = xr.get_sections()[0]
         last_section = xr.get_sections()[-1]
 
-        print first_section.start_pos
-        print last_section.end_pos
+        # print first_section.start_pos
+        # print last_section.end_pos
         assert first_section.start_pos == 1.402
-        assert last_section.end_pos == 8.0
+        assert last_section.end_pos == 7.082
 
     def test_section(object):
         xr = XSCReader('test/data/segmented_audio_file.xsc')
         sections = xr.get_sections()
         last_section = sections[-1]
 
-        assert last_section.name == 'J'
+        assert last_section.name == 'H'
         
         sections.reverse()
         last_processed_section = None
@@ -39,6 +39,4 @@ class TestXSCReader(object):
 
         assert last_processed_section.name == 'I+'
         assert last_processed_section.get_start_pos_str() == "00:06"
-        assert last_processed_section.get_end_pos_str() == "00:07"
-            
-        
+        assert last_processed_section.get_end_pos_str() == "00:08"
