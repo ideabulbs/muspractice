@@ -1,10 +1,11 @@
-#!/usr/bin/python
-import subprocess
 import os
 import math
 import mad
-import sys
 
+class SectionMarker(object):
+    def __init__(self):
+        self.name = ""
+        self.pos = 0.0
 
 class Section(object):
 
@@ -40,11 +41,15 @@ class Section(object):
             ceil = file_length
         return self.get_timestamp_str(ceil)
 
+    def __str__(self):
+        return "Section('%s', %.2f, %.2f)" % (self.name, self.start_pos, self.end_pos)
+
 
 class XSCReader(object):
     """Read XSC files from Transcribe"""
 
     def __init__(self, filename):
+        self.markers = []
         self.filename = os.path.expanduser(filename)
 
         if not os.path.exists(self.filename):
@@ -52,6 +57,7 @@ class XSCReader(object):
 
         with open(self.filename, 'r') as inp:
             self.string = inp.read()
+        self.read_section_markers()
 
     def get_sound_filename(self):
         for line in self.string.splitlines():
@@ -74,11 +80,9 @@ class XSCReader(object):
     def get_sound_file_length(self):
         mf = mad.MadFile(os.path.abspath(self.get_sound_filename()))
         return mf.total_time() / 1000.0
-        
-    def get_sections(self):
-        sections = []
+
+    def read_section_markers(self):
         section_part_open = False
-        prev_section = None
         for line in self.string.splitlines():
             if line.startswith('SectionStart'):
                 section_part_open = True
@@ -89,47 +93,44 @@ class XSCReader(object):
                 continue
             if not line.startswith('S,'):
                 continue
-            _, _, _, name, _, start_pos = line.split(",")
-            if prev_section is not None:
-                if prev_section.end_pos is None:
-                    prev_section.end_pos = self.convert_timestamp_to_seconds(start_pos)
+            _, _, _, name, _, pos = line.split(",")
+            marker = SectionMarker()
+            marker.name = name
+            marker.pos = self.convert_timestamp_to_seconds(pos)
+            self.markers.append(marker)
+        return True
+    
+    def get_marker_by_name(self, name):
+        for marker in self.markers:
+            if marker.name == name:
+                return marker
+        return None
+        
+    def get_sections(self):
+        sections = []
+        for marker in self.markers:
+            if marker.name.endswith('*'):  # '*' means end section marker
+                continue
 
-            section = Section()
-            section.source_filename = self.get_sound_filename()
-            section.name = name
-            section.start_pos = self.convert_timestamp_to_seconds(start_pos)
-            section.end_pos = None
-            
-            prev_section = section
-            sections.append(section)
+            section = None
+            if marker.name:
+                end_marker_name = marker.name[:-1] + '*'
+                end_marker = self.get_marker_by_name(end_marker_name)
+                section = Section()
+                section.start_pos = marker.pos
+                section.name = marker.name
+                section.source_filename = self.get_sound_filename()
 
-        if sections:
-            if sections[-1].end_pos is None:
-                sections[-1].end_pos = self.get_sound_file_length()
+                if end_marker is not None:
+                    section.end_pos = end_marker.pos
+                else:
+                    marker_index = self.markers.index(marker)
+                    if marker_index >= len(self.markers):
+                        section.end_pos = self.get_sound_file_length()
+                    else:
+                        section.end_pos = self.markers[marker_index + 1].pos
+
+            if section is not None:
+                sections.append(section)
         return sections
 
-def main():
-    if not len(sys.argv) == 3:
-        print "This script will read xsc files from Transcribe and insert chosen sections into the database for practicing"
-        print "Usage: ./xsc_insert <xsc_file> <tagline>"
-        sys.exit(1)
-    xsc_file = os.path.expanduser(sys.argv[1])
-    tagline = sys.argv[2]
-    xr = XSCReader(xsc_file)
-    sections = xr.get_sections()
-    print 'Inserting sections from: %s' % xr.get_sound_filename()
-    for s in sections:
-        if s.is_ignored():
-            print "Ignoring:", s.name, s.get_start_pos_str(), s.get_end_pos_str()
-            print
-            continue
-        print "Inserting:", s.name, s.get_start_pos_str(), '--', s.get_end_pos_str()
-        cmd = "./yt_insert %s 'tagline' %s %s" % (s.source_filename, s.get_start_pos_str(), s.get_end_pos_str())
-        popen = subprocess.Popen(['./yt_insert', s.source_filename, tagline, s.get_start_pos_str(), s.get_end_pos_str()])
-        popen.communicate()
-        if popen.returncode != 0:
-            raise RuntimeError('Error occured while inserting section %s from %s' % (s.name, s.source_filename))
-        print
-
-if __name__ == '__main__':
-    main()
