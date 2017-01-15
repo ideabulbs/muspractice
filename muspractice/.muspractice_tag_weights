@@ -1,11 +1,11 @@
 {
     "history_length": 400,
     "tag_weights": {
-	"songs": 0.20,
-	"solos": 0.20,
-	"improvisation": 0.20,
-	"scales": 0.20,
-	"arpeggios": 0.20
+	"guitar vocal": 0.20,
+	"piano improvisation": 0.20,
+	"guitar improvisation": 0.20,
+	"piano scale": 0.20,
+	"guitar sweep": 0.20
     }
     
 }

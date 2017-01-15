@@ -75,21 +75,6 @@ def get_unique_tags(phrase_tag_list):
                 unique_tags.append(tag)
     return unique_tags
 
-def get_tag_weights(phrase_tag_list):
-    """Calculate current tag weights in the repetition data"""
-    unique_tags = get_unique_tags(phrase_tag_list)
-    total_repetition_count = len(phrase_tag_list)
-    result = dict()
-    for tag in unique_tags:
-        for item in phrase_tag_list:
-            if tag in item:
-                if tag not in result.keys():
-                    result[tag] = 0
-                result[tag] += 1
-    for tag, reps in result.iteritems():
-        result[tag] = reps / float(total_repetition_count)
-    return result
-
 def print_weights(sorted_diff, history_length, limit=None):
     """Print the calculated weights"""
     out = ""
@@ -106,8 +91,22 @@ def print_weights(sorted_diff, history_length, limit=None):
 def main():
     """main"""
     data = get_data()
-    current_weights = get_tag_weights(data)
     target_weights = CONFIG['tag_weights']
+    current_weights = dict()
+    for tagline, value in target_weights.iteritems():
+        if tagline not in current_weights:
+            current_weights[tagline] = 0
+        tags = tagline.split(' ')
+        for item in data:
+            all_tags_found = True
+            for tag in tags:
+                if tag not in item:
+                    all_tags_found = False
+            if all_tags_found:
+                current_weights[tagline] += 1
+
+    for tagline, value in current_weights.iteritems():
+        current_weights[tagline] = float(value) / CONFIG['history_length']
     
     diff_dict = dict()
     for tag, value in target_weights.iteritems():
