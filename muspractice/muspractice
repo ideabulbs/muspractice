@@ -17,7 +17,7 @@ from models.MetronomeSetup import *
 from models.IniSerializator import *
 from tools.Metronome import Metronome
 from tools.SightRead import SightRead
-from tools.Hook import run_hooks
+from tools.Hook import run_hooks, wait_hooks
 from config.config import Config
 
 
@@ -81,9 +81,10 @@ class TextInterface(object):
             print phrase.get_comment()
             print
 
+        pre_hooks = []
         context = create_context(phrase)
         if self.config.RUN_HOOKS == 'y':
-            run_hooks('hooks.pre', context=context)
+            pre_hooks = run_hooks('hooks.pre', context=context)
 
         if phrase.get_filename():
             player = tools.Pipeline.Pipeline(self.config.AUDIOSINK)
@@ -149,8 +150,9 @@ class TextInterface(object):
         if phrase.get_image():
             sr.stop()
 
+        post_hooks = []
         if self.config.RUN_HOOKS == 'y':
-            run_hooks('hooks.post', context=context)
+            post_hooks = run_hooks('hooks.post', context=context)
             
     def show_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
@@ -375,11 +377,12 @@ class TextInterface(object):
             print
             print phrase.get_comment()
             print
-            
+
+        pre_hooks = []
         context = create_context(phrase, metronome=ms)
         if self.config.RUN_HOOKS == 'y':
-            run_hooks('hooks.pre', context=context)
-                        
+            pre_hooks = run_hooks('hooks.pre', context=context)
+            
         # if speed is 0, metronome won't be started
         if ms.speed != 0:
             if not m.start():
@@ -398,8 +401,12 @@ class TextInterface(object):
         if phrase.get_image():
             sr.stop()
 
+        post_hooks = []
         if self.config.RUN_HOOKS == 'y':
-            run_hooks('hooks.post', context=context)
+            post_hooks = run_hooks('hooks.post', context=context)
+
+        wait_hooks(pre_hooks)
+        wait_hooks(post_hooks)
 
     def list_repetitions(self):
         repetitions = self.dbh.get_repetitions()

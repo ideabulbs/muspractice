@@ -12,8 +12,8 @@ class TestTagWeights(object):
         stdout = stdout.splitlines()
         assert len(stdout) == 2
 
-        data_line = stdout[1]
-        tokens = data_line.split()
+        data_line = stdout[1].strip()
+        tokens = data_line.split('  ')
         assert len(tokens) == 3
 
         for token in tokens:
