@@ -86,7 +86,7 @@ def set_metadata(filename):
     if popen.returncode != 0:
         raise RuntimeError('Could not set metadata on local file: %s' % filename)
 
-    cmd = 'mv %s %s' % (filename, new_filename)
+    cmd = 'mv %s %s/%s' % (filename, os.environ['MUSPRACTICE_RECORDING_ARCHIVE'], new_filename)
     popen = subprocess.Popen(cmd, shell=True)
     popen.communicate()
     if popen.returncode != 0:
