@@ -3,4 +3,4 @@ audiosink = jackaudiosink
 music_directory = test/data
 database_file = test/data.db
 temporary_directory = /tmp/
-run_hooks = n
+run_hooks = y
