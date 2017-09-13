@@ -1,0 +1,6 @@
+[General]
+audiosink = jackaudiosink
+music_directory = ~/shared/repmusic
+database_file = ~/repmusic/repmusic.db
+temporary_directory = /tmp/
+run_hooks = y

@@ -43,9 +43,9 @@ def create_context(phrase, metronome=None):
 class TextInterface(object):
     '''muspractice text console UI'''
 
-    def __init__(self):
+    def __init__(self, config_file):
         '''Constructor'''
-        self.config = Config()
+        self.config = Config(config_file)
         if self.config.is_new:
             print "New config has been initialized. Verify settings: %s" % config_filename        
             sys.exit(0)
@@ -427,8 +427,10 @@ class TextInterface(object):
         @param directory: directory path relative to music dir
         """
         path = "%s%s" % (self.config.MUSIC_DIRECTORY, directory)
+        exp_path = os.path.expanduser(path)
+        print "exp path", exp_path
         if not os.path.exists(os.path.expanduser(path)):
-            print "Could not find specified path! Looking in: %s" % path
+            print "Could not find specified path: %s" % path
             return
         self.dbh.bulk_add(directory, self.config, tagline)
 
@@ -436,12 +438,10 @@ class TextInterface(object):
 def main():
     parser = OptionParser()
 
-    parser.add_option('-d', '--database', action="store",
-                      type="string", dest="database",
-                      help="sqlite database file to use. "
-                      "If not given, the filename is looked up in config file (.muspracticerc)."
-                      "Otherwise the option overrides the variable")
-    
+    parser.add_option('-C', '--config', action="store",
+                      type="string", dest="config",
+                      help="configuration file to use. ")
+
     parser.add_option('-t', '--todo', action="store_true",
                       dest="todo", help="show todo list")
     
@@ -501,16 +501,19 @@ def main():
     
     (options, args) = parser.parse_args()
       
-    ti = TextInterface()
     
-    if not options.database:
-        options.database = ti.config.DATABASE_FILE
-                
-    if not os.path.exists(options.database):
-        sys.stderr.write('Could not find database file: %s. Initialize new: ./muspractice -d <filename> -i \n' % options.database)
+    if not options.config:
+        raise RuntimeError('No config file given!')
+
+    config = Config(options.config)
+
+    if not os.path.exists(options.config):
+        sys.stderr.write('Could not find config file: %s. Usage: ./muspractice -C <filename> -i \n' % options.config)
         sys.exit(1)
-        
-    ti.init_dbhandler(options.database)
+
+    ti = TextInterface(options.config)
+
+    ti.init_dbhandler(config.DATABASE_FILE)
         
     if options.play_phrase:
         ti.play_phrase(options.play_phrase)

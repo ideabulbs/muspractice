@@ -1,0 +1,18 @@
+{
+    "history_length": 400,
+    "tag_weights": {
+	"guitar vocal": 0.13,
+	"guitar repertoire": 0.09,
+	"guitar altpick": 0.09,
+	"guitar scale": 0.09,
+	"guitar sweep": 0.07,
+	"guitar legato": 0.07,
+	"guitar tapping": 0.07,
+	"guitar chords": 0.07,
+	"guitar rhythm": 0.09,
+	"guitar phrasing": 0.09,
+	"guitar improvisation": 0.06,
+	"solfeggio": 0.08
+    }
+    
+}

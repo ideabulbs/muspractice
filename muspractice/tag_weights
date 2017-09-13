@@ -6,39 +6,17 @@ import json
 import operator
 import sys
 import math
+from optparse import OptionParser
 from config.config import Config as MuspracticeConfig
 
 
-CONFIG_FILENAME = '.muspractice_tag_weights'
-LOCAL_CONFIG_FILENAME = '%s/%s' % (os.getcwd(), CONFIG_FILENAME)
-GLOBAL_CONFIG_FILENAME = '%s/%s' % (os.environ['HOME'], CONFIG_FILENAME)
-
-def get_config_path():
-    """
-    Find appropriate config file with target tag weights. Local file
-    in the current directory will override the global file in home
-    directory.
-
-    Filenames:
-    - .muspractice_tag_weights (current working directory)
-    - ~/.muspractice_tag_weights (global)
-    """
-    if len(sys.argv) > 1:
-        return sys.argv[1]
-
-    if os.path.exists(LOCAL_CONFIG_FILENAME):
-        return LOCAL_CONFIG_FILENAME
-    elif os.path.exists(GLOBAL_CONFIG_FILENAME):
-        return GLOBAL_CONFIG_FILENAME
-    return None
-
-def get_config():
+def get_config(config_file):
     """Read target weights from config file"""
-    config_file = get_config_path()
-    if not config_file or not os.path.exists(config_file):
-        raise RuntimeError('Could not find tag weight config: %s' % (config_file))
-    with open(config_file, 'r') as inp:
-        config_dict = json.load(inp)
+    try:
+        with open(config_file, 'r') as inp:
+            config_dict = json.load(inp)
+    except IOError:
+        raise RuntimeError('Could not find tag weight config: %s' % config_file)
 
     # check that total sum of all weights is 1.0 (for consistent results)
     weight_sum = 0
@@ -50,12 +28,10 @@ def get_config():
         sys.exit(1)
     return config_dict
 
-CONFIG = get_config()
-
-def get_data():
+def get_data(muspractice_config, history_length):
     """Read repetition data from muspractice"""
-    muspractice_config = MuspracticeConfig()
-    cmd = "python muspractice -d %s -R | tail -n %s" % (muspractice_config.DATABASE_FILE, CONFIG['history_length'])
+    muspractice_config = MuspracticeConfig(muspractice_config)
+    cmd = "python muspractice -C %s -R | tail -n %s" % (muspractice_config, history_length)
     popen = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = popen.communicate()
     result = []
@@ -90,8 +66,25 @@ def print_weights(sorted_diff, history_length, limit=None):
 
 def main():
     """main"""
-    data = get_data()
-    target_weights = CONFIG['tag_weights']
+    parser = OptionParser()
+    parser.add_option('-C', '--muspractice-config', action="store",
+                      type="string", dest="muspractice_config",
+                      help="muspractice configuration file to use. ")
+
+    parser.add_option('-c', '--config', action="store",
+                      type="string", dest="config",
+                      help="tagweights configuration file to use. ")
+
+    (options, args) = parser.parse_args()
+    if not options.muspractice_config:
+        raise RuntimeError('No muspractice config file given!')
+
+    if not options.config:
+        raise RuntimeError('No tag weights config file given!')
+
+    config = get_config(options.config)
+    data = get_data(options.muspractice_config, config['history_length'])
+    target_weights = config['tag_weights']
     current_weights = dict()
     for tagline, value in target_weights.iteritems():
         if tagline not in current_weights:
@@ -106,7 +99,7 @@ def main():
                 current_weights[tagline] += 1
 
     for tagline, value in current_weights.iteritems():
-        current_weights[tagline] = float(value) / CONFIG['history_length']
+        current_weights[tagline] = float(value) / config['history_length']
     
     diff_dict = dict()
     for tag, value in target_weights.iteritems():
@@ -122,7 +115,7 @@ def main():
         limit = 3
     else:
         limit = None
-    print_weights(sorted_diff, CONFIG['history_length'], limit=limit)
+    print_weights(sorted_diff, config['history_length'], limit=limit)
 
 
 if __name__ == '__main__':

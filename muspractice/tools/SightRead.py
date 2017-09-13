@@ -37,7 +37,7 @@ class SightRead(object):
                 self.wait()
                 self._main_thread.stop()
                                 
-        command = "xpaint %s" % (self.filename)
+        command = "qiv %s" % (self.filename)
         self._is_playing = True
         if self.duration:
             self._popen = subprocess.Popen(command.split(), shell=False,

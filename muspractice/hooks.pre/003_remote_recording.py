@@ -66,26 +66,26 @@ class RecordingPortDiscovery(object):
         ports = self.get_remote_jack_ports()
         result = []
 
-        if not 'system:capture_5' in ports:
-            raise RuntimeError('Could not find system:capture_5')
-        result.append('system:capture_5')
+        if not 'system:capture_3' in ports:
+            raise RuntimeError('Could not find system:capture_1')
+        result.append('system:capture_3')
         
-        if not 'system:capture_6' in ports:
-            raise RuntimeError('Could not find system:capture_6')
-        result.append('system:capture_6')
+        if not 'system:capture_4' in ports:
+            raise RuntimeError('Could not find system:capture_4')
+        result.append('system:capture_4')
 
         piano_ports = ['Non-Mixer/PianoL:out-1', 'Non-Mixer/PianoR:out-1']
         for port in piano_ports:
             if port in ports:
                 result.append(port)
 
-        if not 'system:capture_3' in ports:
-            raise RuntimeError('Could not find system:capture_3')
-        result.append('system:capture_3')
+        # if not 'system:capture_3' in ports:
+        #     raise RuntimeError('Could not find system:capture_3')
+        # result.append('system:capture_3')
 
-        if not 'system:capture_4' in ports:
-            raise RuntimeError('Could not find system:capture_4')
-        result.append('system:capture_4')
+        # if not 'system:capture_4' in ports:
+        #     raise RuntimeError('Could not find system:capture_4')
+        # result.append('system:capture_4')
 
                 
         return result
