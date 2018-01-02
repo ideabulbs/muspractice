@@ -1,6 +1,6 @@
 import ConfigParser
 import os
-
+import sys
 
 class Config(object):
 
@@ -40,6 +40,7 @@ class Config(object):
         self._cfp.set('General', 'music_directory', '~/Music')
         self._cfp.set('General', 'database_file', '~/muspractice/practice_data.db')
         self._cfp.set('General', 'temporary_directory', '/tmp/')
+        self._cfp.set('General', 'jack_ports', 'system:playback_1,system:playback_2')
         with open(self.config_file, 'w') as out:
             self._cfp.write(out)
         return True
@@ -74,3 +75,15 @@ class Config(object):
     @property
     def RUN_HOOKS(self):
         return self._cfp.get('General', 'run_hooks')
+
+    @property
+    def JACK_PORTS(self):
+        try:
+            ports_str = self._cfp.get('General', 'jack_ports')
+        except ConfigParser.NoOptionError:
+            print "Parameter 'jack_ports' is not set in the config file!"
+            sys.exit(1)
+        ports = []
+        for item in ports_str.split(','):
+            ports.append(item.strip())
+        return ports

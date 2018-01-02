@@ -366,6 +366,7 @@ class TextInterface(object):
         m = Metronome()
         m.set_meter(ms.meter)
         m.set_speed(ms.speed)
+        m.set_jack_ports(self.config.JACK_PORTS)
         print "Metronome tempo: %d; Meter: %s" % (ms.speed, ms.meter)
         m.set_duration(ms.duration)
 

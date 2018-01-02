@@ -14,6 +14,7 @@ class Metronome(object):
         self._meter = 0
         self._is_playing = False
         self._popen = None
+        self._jack_ports = []
         
     def wait_for_metronome_port(self, wait_open=True):
         for _ in range(self.timeout):
@@ -51,10 +52,13 @@ class Metronome(object):
                 self.wait()
                 self._metronome.stop()
 
+        command = "klick"
+        for port in self._jack_ports:
+            command += " -p %s" % port
         if self._meter == 0:
-            command = "klick -e %d" % (self._speed)
+            command += " -e %d" % (self._speed)
         else:
-            command = "klick %d/4 %d" % (self._meter, self._speed)
+            command += " %d/4 %d" % (self._meter, self._speed)
         
         self._is_playing = True
         if self._duration:
@@ -63,11 +67,6 @@ class Metronome(object):
             self._metronome_wait.start()
             if not self.wait_for_metronome_port():
                 return False
-            popen = subprocess.Popen(['jack_connect', self.jack_port_name, 'system:playback_1'])
-            popen.communicate()
-            
-            popen = subprocess.Popen(['jack_connect', self.jack_port_name, 'system:playback_2'])
-            popen.communicate()
         else:
             self._popen = subprocess.Popen(command, shell=False)
         return True
@@ -95,6 +94,9 @@ class Metronome(object):
 
     def set_meter(self, meter):
         self._meter = meter
+
+    def set_jack_ports(self, ports):
+        self._jack_ports = ports
         
 if __name__ == '__main__':
     m = Metronome()
