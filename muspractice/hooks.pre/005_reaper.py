@@ -5,71 +5,86 @@ import sys
 import signal
 import time
 import shutil
+import requests
+
 
 class RemoteMachine(object):
 
     def __init__(self, ip_addr):
         self.ip_addr = ip_addr
+        self.server_url = "http://%s:5000" % ip_addr
+        self.timeout = 5
     
     def is_online(self):
         popen = subprocess.Popen(['ping', '-c', '1', self.ip_addr], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         popen.communicate()
         return popen.returncode == 0
 
+    def is_reaper_service_running(self):
+        if not self.is_online():
+            return False
+        response = requests.get(self.server_url + "/test", timeout=self.timeout)
+        if response.status_code != 200:
+            print response.text
+            raise RuntimeError('Reaper service running on %s, but the server returned an invalid response: %s' % (self.server_url,
+                                                                                                                  response.status_code))
+        return response.text == 'test ok'
+
+    def project_exists(self, project_id):
+        url = self.server_url + "/project_exists?project_id=%s" % project_id
+        response = requests.get(url, timeout=self.timeout)
+        if response.status_code != 200:
+            print response.text
+            raise RuntimeError('Incorrect response received from %s: %s' % (url, response.status_code))
+        return response.text == 'true'
+
+    def create_project(self, project_id):
+        url = self.server_url + "/create_project?project_id=%s" % project_id
+        response = requests.get(url, timeout=self.timeout)
+        if response.status_code != 200:
+            print response.text
+            raise RuntimeError('Incorrect response received from %s: %s' % (url, response.status_code))
+        return response.text == 'ok'
+
+    def start_project(self, project_id):
+        url = self.server_url + "/start?project_id=%s" % project_id
+        response = requests.get(url, timeout=self.timeout)
+        if response.status_code != 200:
+            print response.text
+            raise RuntimeError('Incorrect response received from %s: %s' % (url, response.status_code))
+        return response.text == 'ok'
+            
+    
 class ReaperProject(object):
 
     def __init__(self, phrase_id):
         self.phrase_id = phrase_id
-        self.projects_subdir = os.path.expanduser('~/repmusic/reaper/')
 
-    def get_project_name(self):
+    def get_project_id(self):
         return "%.6d" % int(self.phrase_id)
-    
-    def get_full_file_path(self):
-        return "%s/%s/%s.RPP" % (self.projects_subdir, self.get_project_name(), self.get_project_name())
-    
-    def get_full_dir_path(self):
-        return "%s/%s.RPP" % (self.projects_subdir, self.get_project_name())
 
-    def is_created(self):
-        if os.path.exists(self.get_full_file_path()):
-            return True
-        return False
-
-    def create(self):
-        if os.path.exists(self.get_full_file_path()):
-            return False
-        src_dir = '%stemplate' % self.projects_subdir
-        dst_dir = '%s%s' % (self.projects_subdir, self.get_project_name())
-        shutil.copytree(src_dir, dst_dir)
-        shutil.move('%s/template.RPP' % (dst_dir), '%s/%s.RPP' % (dst_dir, self.get_project_name()))
-        return True
-        
+            
 def main():
-    ip_addr = '10.0.2.2'
-    rr = RemoteMachine(ip_addr)
-    if not rr.is_online():
-        print 'Reaper host is not online. Recording skipped'
-        sys.exit(1)
+    if os.environ.get('MUSPRACTICE_REAPER_HOST') is None:
+        print 'Reaper host is not set (MUSPRACTICE_REAPER_HOST)'
+        return
 
-    popen = subprocess.Popen('wget -O - http://%s:5000/test' % ip_addr, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE, shell=True)
-    stdout, stderr = popen.communicate()
-    if 'test ok' not in stdout:
+    ip_addr = os.environ['MUSPRACTICE_REAPER_HOST']
+    rr = RemoteMachine(ip_addr)
+
+    if not rr.is_reaper_service_running():
         print "Reaper host is not online. Skipped"
         sys.exit(1)
 
     rp = ReaperProject(os.environ.get('PHRASE_ID'))
-    if not rp.is_created():
+    project_id = rp.get_project_id()
+    if not rr.project_exists(project_id):
         print "Project not found. Creating"
-        if not rp.create():
+        if not rr.create_project(project_id):
             print "Could not create Reaper project from template!"
             sys.exit(1)
 
-    popen = subprocess.Popen('wget -O - http://%s:5000/start?project_id=%s' % (ip_addr, rp.get_project_name()), stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE, shell=True)
-    stdout, stderr = popen.communicate()
-    if 'ok' not in stdout:
+    if not rr.start_project(project_id):
         print "Could not start Reaper!"
         sys.exit(1)
 
@@ -79,6 +94,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # rp = ReaperProject(1869)
-    # print rp.is_created()
-    # print rp.create()
