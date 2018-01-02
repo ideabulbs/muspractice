@@ -53,8 +53,10 @@ class Metronome(object):
                 self._metronome.stop()
 
         command = "klick"
-        for port in self._jack_ports:
-            command += " -p %s" % port
+
+        if os.environ.get('MUSPRACTICE_METRONOME_MUTE') != 'y':
+            for port in self._jack_ports:
+                command += " -p %s" % port
         if self._meter == 0:
             command += " -e %d" % (self._speed)
         else:
