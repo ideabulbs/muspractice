@@ -58,7 +58,7 @@ class Metronome(object):
             for port in self._jack_ports:
                 command += " -p %s" % port
         if self._meter == 0:
-            command += " -e %d" % (self._speed)
+            command += " -v 0.7 -e %d" % (self._speed)
         else:
             command += " %d/4 %d" % (self._meter, self._speed)
         

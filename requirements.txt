@@ -1,2 +1,4 @@
--e git+ssh://git@github.com/ideabulbs/libschedule.git@R0.0.1#egg=libschedule
-
+git+ssh://git@github.com/ideabulbs/libschedule.git@b169c76fec5f8ae183aa78c0dec69f69f8e06875#egg=libschedule
+pymad==0.10
+requests==2.19.1
+urllib3==1.23
