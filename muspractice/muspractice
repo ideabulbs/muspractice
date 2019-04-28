@@ -7,6 +7,7 @@ import random
 import ConfigParser
 import glob
 import mad
+import subprocess
 from optparse import OptionParser
 import tools.Pipeline
 from models.dbhandler import PrioritizedScheduleDatabaseHandler
@@ -73,7 +74,6 @@ class TextInterface(object):
         metronome = metronomes[0]
 
         if phrase.get_image():
-            print "Displaying image: %s" % phrase.get_image()
             sr = self.show_image(phrase, metronome)
 
         if phrase.get_comment():
@@ -233,6 +233,27 @@ class TextInterface(object):
                     description = phrase.get_short_description()
                 print phrase.id, "\t", priority, "\t", phrase.get_filename(path=False), description, "\t", phrase.get_tagline()
 
+    def edit_phrase_inkscape(self, phrase_id):
+        phrase = self.dbh.get_phrase_by_id(phrase_id)
+        if not phrase.get_image():
+            print "The given phrase has no image"
+            return False
+
+        img_path = "%s%s" % (self.config.MUSIC_DIRECTORY, phrase.get_image())
+        ann_path = "%s%s" % (self.config.MUSIC_DIRECTORY, phrase.get_annotated_image())
+        if not os.path.exists(os.path.expanduser(img_path)):
+            print "Cannot find image: %s" % img_path
+            return False
+
+        path = img_path
+        if os.path.exists(os.path.expanduser(ann_path)):
+            path = ann_path
+
+        cmd = "inkscape %s" % path
+        popen = subprocess.Popen(cmd, shell=True)
+        popen.communicate()
+        return True
+
     def edit_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         metronome_setups = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
@@ -346,7 +367,17 @@ class TextInterface(object):
 
     def show_image(self, phrase, ms):
         sr = SightRead()
-        sr.filename = os.path.expanduser(self.config.MUSIC_DIRECTORY + phrase.get_image())
+
+        img_path = "%s%s" % (self.config.MUSIC_DIRECTORY, phrase.get_image())
+        ann_path = "%s%s" % (self.config.MUSIC_DIRECTORY, phrase.get_annotated_image())
+
+        path = img_path
+        if os.path.exists(os.path.expanduser(ann_path)):
+            path = ann_path
+        path = os.path.expanduser(path)
+
+        print "Displaying image: %s" % path
+        sr.filename = path
         sr.duration = ms.duration
         if not sr.start():
             print "Could not show image!"
@@ -371,7 +402,6 @@ class TextInterface(object):
         m.set_duration(ms.duration)
 
         if phrase.get_image():
-            print "Displaying image: %s" % phrase.get_image()
             sr = self.show_image(phrase, ms)
 
         if phrase.get_comment():
@@ -465,6 +495,10 @@ def main():
                       type="int", dest="edit_phrase",
                       help="phrase id to edit")
     
+    parser.add_option('-E', '--edit-annotations', action="store",
+                      type="int", dest="edit_phrase_inkscape",
+                      help="phrase id to edit in inkscape (annotations)")
+
     parser.add_option('-c', '--create', action="store_true",
                       dest="create_phrase", help="create phrase")
     
@@ -528,6 +562,8 @@ def main():
         ti.show_todo_list()
     elif options.edit_phrase:
         ti.edit_phrase(options.edit_phrase)
+    elif options.edit_phrase_inkscape:
+        ti.edit_phrase_inkscape(options.edit_phrase_inkscape)
     elif options.create_phrase:
         ti.create_phrase()
     elif options.delete_phrase:

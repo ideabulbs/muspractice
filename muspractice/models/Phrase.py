@@ -63,6 +63,9 @@ class Phrase(Serializable):
     def get_image(self):
             return self._image
 
+    def get_annotated_image(self):
+            return self.get_image()[:-4] + ".svg"
+
     def set_tagline(self, tagline):
             self._tagline = tagline
 
