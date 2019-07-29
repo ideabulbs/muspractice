@@ -1,9 +1,9 @@
 import subprocess
 import os
 import shutil
-from models.dbhandler import *
-from helper import Helper
-from config.config import Config
+from ..models.dbhandler import *
+from .helper import Helper
+from ..config.config import Config
 
 class FunctionalBase(Helper):
 
@@ -49,10 +49,12 @@ run_hooks = n
     def _initialize_database(self):
         if os.path.exists(self.config.DATABASE_FILE):
             os.unlink(self.config.DATABASE_FILE)
-        cmd = "./muspractice -C %s -i" % (self.config_file)
+        cmd = "python -m muspractice -C %s -i" % (self.config_file)
         popen = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = popen.communicate()
         if popen.returncode != 0:
+            print(stdout)
+            print(stderr)
             raise RuntimeError('Could not init test database!')
 
     def _create_music_directory(self):        
@@ -85,20 +87,21 @@ run_hooks = n
             shutil.rmtree(self.music_dir)
 
     def run_program(self, keys):
-        cmd = "./muspractice %s" % keys
+        cmd = "python -m muspractice %s" % keys
         popen = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = popen.communicate()
         if popen.returncode != 0:
-            print stderr
+            print(stdout)
+            print(stderr)
             raise RuntimeError("muspractice ended with an unexpected error code: %d" % popen.returncode)
-        return stdout, stderr
+        return stdout.decode('ascii'), stderr.decode('ascii')
 
     def reschedule(self, phrase_id, grade):
-        cmd = "./muspractice -C %s -r %s" % (self.config_file, phrase_id)
+        cmd = "python -m muspractice -C %s -r %s" % (self.config_file, phrase_id)
         popen = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-        popen.stdin.write(grade)
+        popen.stdin.write(grade.encode('ascii'))
         stdout, stderr = popen.communicate()
-        return stdout, stderr
+        return stdout.decode('ascii'), stderr.decode('ascii')
 
     def get_phrase_list_length(self):
         keys = "-C %s -l" % self.config_file
@@ -146,12 +149,15 @@ class TestFunctional(FunctionalBase):
     def test_todo(self):
         keys = "-C %s -t" % self.config_file
         stdout, stderr = self.run_program(keys)
+        print(stdout)
+        print(stderr)
         assert len(stdout.split(os.linesep)) > 1
         assert len(stderr) == 0
 
     def test_show_phrase(self):
         keys = "-C %s -s 1" % self.config_file
         stdout, stderr = self.run_program(keys)
+        print(stdout)
         assert len(stdout.split(os.linesep)) > 1
         assert len(stderr) == 0
         assert "File:" in stdout

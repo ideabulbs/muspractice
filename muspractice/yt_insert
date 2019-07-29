@@ -6,13 +6,13 @@ import os
 import re
 import sys
 import shutil
-from config.config import Config
-from models.dbhandler import PrioritizedScheduleDatabaseHandler
-from models.Schedule import *
-from models.Scheduler import *
-from models.Repetition import *
-from models.MetronomeSetup import *
-from models.IniSerializator import *
+from .config.config import Config
+from .models.dbhandler import PrioritizedScheduleDatabaseHandler
+from .models.Schedule import *
+from .models.Scheduler import *
+from .models.Repetition import *
+from .models.MetronomeSetup import *
+from .models.IniSerializator import *
 
 
 class YoutubeDownloader(object):
@@ -76,8 +76,8 @@ class AudioFileCutter(object):
             popen = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = popen.communicate()
             if popen.returncode != 0:
-                print stdout
-                print stderr
+                print(stdout)
+                print(stderr)
                 raise RuntimeError("Could not cut the file %s" % self.filename)
             start_ts = re.sub(":", "_", self.start_time)
             end_ts = re.sub(":", "_", self.end_time)
@@ -105,7 +105,7 @@ class FragmentSource(object):
             config_filename = "~/%s" % config_filename
         self.config = Config(config_filename)
         if self.config.is_new:
-            print "New config has been initialized. Verify settings: %s" % config_filename        
+            print("New config has been initialized. Verify settings: %s" % config_filename)        
             sys.exit(0)
         self.dbh = PrioritizedScheduleDatabaseHandler(self.config.DATABASE_FILE)
 
@@ -133,7 +133,7 @@ class FragmentSource(object):
             with open(os.path.expanduser(subtree_dest_file), 'wb') as out:
                 data = open(output_filename, 'rb').read()
                 out.write(data)
-            print "MP3 file created: %s" % subtree_dest_file
+            print("MP3 file created: %s" % subtree_dest_file)
             
         if self.thumbnail_file:
             image_filename_only = self.thumbnail_file.split('/')[-1]
@@ -144,7 +144,7 @@ class FragmentSource(object):
             popen.communicate()
             if popen.returncode != 0:
                 raise RuntimeError("Could not move file %s to %s" % (self.thumbnail_file, subtree_dest_image))
-            print "Thumbnail file created: %s" % subtree_dest_image
+            print("Thumbnail file created: %s" % subtree_dest_image)
             
         tokens = self.start_time.split(":")
         start_ts = int(tokens[0]) * 60 + int(tokens[1])
@@ -174,14 +174,14 @@ class FragmentSource(object):
                                 
         phrase_id = self.dbh.insert_phrase(phrase)
         if not phrase_id:
-            print "Failed to add phrase to database"
+            print("Failed to add phrase to database")
             return
         schedule = Schedule()
         schedule.set_phrase_id(phrase_id)
         schedule.set_next_repetition(datetime.date.today())
         schedule_id = self.dbh.insert_schedule(schedule)
         if not schedule_id:
-            print "Failed to schedule the new phrase"
+            print("Failed to schedule the new phrase")
             return
         metronome_setup = MetronomeSetup()
         metronome_setup.phrase_id = phrase_id
@@ -191,9 +191,9 @@ class FragmentSource(object):
         metronome_setup.increment = 2
         metronome_setup_id = self.dbh.insert_metronome_setup(metronome_setup)
         if not metronome_setup_id:
-            print "Failed to insert metronome setup"
+            print("Failed to insert metronome setup")
             return
-        print "Phrase inserted: id=%s" % phrase_id
+        print("Phrase inserted: id=%s" % phrase_id)
         self.cleanup()
         
     def cleanup(self):
@@ -255,8 +255,8 @@ class PNGFileInserter(FragmentSource):
         
 def main():
     if len(sys.argv) != 5:
-        print "Usage: yt_insert <url/mp3 path> <tagline> <start_time> <end_time>"
-        print "Example: yt_insert https://www.youtube.com/watch?v=abcdefghij guitar 0:10 0:25"
+        print("Usage: yt_insert <url/mp3 path> <tagline> <start_time> <end_time>")
+        print("Example: yt_insert https://www.youtube.com/watch?v=abcdefghij guitar 0:10 0:25")
         sys.exit(1)
     source = sys.argv[1]
     tagline = sys.argv[2]
@@ -269,7 +269,7 @@ def main():
     elif '.png' in source.lower():
         inserter = PNGFileInserter(source, tagline)        
     else:
-        print "Could not determine source type"
+        print("Could not determine source type")
         sys.exit(1)
         
     inserter.process()

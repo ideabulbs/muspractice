@@ -4,30 +4,30 @@ import os
 import math
 import mad
 import sys
-from tools.xsc import XSCReader
+from .tools.xsc import XSCReader
 
 def main():
     if not len(sys.argv) == 3:
-        print "This script will read xsc files from Transcribe and insert chosen sections into the database for practicing"
-        print "Usage: ./xsc_insert <xsc_file> <tagline>"
+        print("This script will read xsc files from Transcribe and insert chosen sections into the database for practicing")
+        print("Usage: ./xsc_insert <xsc_file> <tagline>")
         sys.exit(1)
     xsc_file = os.path.expanduser(sys.argv[1])
     tagline = sys.argv[2]
     xr = XSCReader(xsc_file)
     sections = xr.get_sections()
-    print 'Inserting sections from: %s' % xr.get_sound_filename()
+    print('Inserting sections from: %s' % xr.get_sound_filename())
     for s in sections:
         if s.is_ignored():
-            print "Ignoring:", s.name, s.get_start_pos_str(), s.get_end_pos_str()
-            print
+            print("Ignoring:", s.name, s.get_start_pos_str(), s.get_end_pos_str())
+            print()
             continue
-        print "Inserting:", s.name, s.get_start_pos_str(), '--', s.get_end_pos_str()
+        print("Inserting:", s.name, s.get_start_pos_str(), '--', s.get_end_pos_str())
         cmd = "./yt_insert %s 'tagline' %s %s" % (s.source_filename, s.get_start_pos_str(), s.get_end_pos_str())
         popen = subprocess.Popen(['./yt_insert', s.source_filename, tagline, s.get_start_pos_str(), s.get_end_pos_str()])
         popen.communicate()
         if popen.returncode != 0:
             raise RuntimeError('Error occured while inserting section %s from %s' % (s.name, s.source_filename))
-        print
+        print()
 
 if __name__ == '__main__':
     main()

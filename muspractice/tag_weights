@@ -20,11 +20,11 @@ def get_config(config_file):
 
     # check that total sum of all weights is 1.0 (for consistent results)
     weight_sum = 0
-    for tag in config_dict['tag_weights'].keys():
+    for tag in list(config_dict['tag_weights'].keys()):
         weight_sum += config_dict['tag_weights'][tag]
 
     if abs(weight_sum - 1.0) > 0.001:
-        print('The sum of all target weights in config file %s should be 1.0. Current sum: %f. Please adjust the target weights.' % (config_file, weight_sum))
+        print(('The sum of all target weights in config file %s should be 1.0. Current sum: %f. Please adjust the target weights.' % (config_file, weight_sum)))
         sys.exit(1)
     return config_dict
 
@@ -61,8 +61,8 @@ def print_weights(sorted_diff, history_length, limit=None):
     for item in list_range:
         additional_reps = history_length * item[1]
         out += "%s:%d  " % (item[0], math.ceil(additional_reps) * (-1))
-    print "Categories that need more repetitions:"
-    print out
+    print("Categories that need more repetitions:")
+    print(out)
 
 def main():
     """main"""
@@ -86,7 +86,7 @@ def main():
     data = get_data(options.muspractice_config, config['history_length'])
     target_weights = config['tag_weights']
     current_weights = dict()
-    for tagline, value in target_weights.iteritems():
+    for tagline, value in target_weights.items():
         if tagline not in current_weights:
             current_weights[tagline] = 0
         tags = tagline.split(' ')
@@ -98,17 +98,17 @@ def main():
             if all_tags_found:
                 current_weights[tagline] += 1
 
-    for tagline, value in current_weights.iteritems():
+    for tagline, value in current_weights.items():
         current_weights[tagline] = float(value) / config['history_length']
     
     diff_dict = dict()
-    for tag, value in target_weights.iteritems():
-        if tag in current_weights.keys():
+    for tag, value in target_weights.items():
+        if tag in list(current_weights.keys()):
             diff_dict[tag] = target_weights[tag] - current_weights[tag]
         else:
             diff_dict[tag] = target_weights[tag]
 
-    sorted_diff = sorted(diff_dict.items(), key=operator.itemgetter(1))
+    sorted_diff = sorted(list(diff_dict.items()), key=operator.itemgetter(1))
     sorted_diff.reverse()
     
     if len(sorted_diff) > 3:

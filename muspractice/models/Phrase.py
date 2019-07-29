@@ -1,5 +1,5 @@
 import os
-from Serializable import *
+from .Serializable import *
 
 class Phrase(Serializable):
 

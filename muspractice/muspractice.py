@@ -1,25 +1,25 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import sys
 import os
 import time
 import datetime
 import random
-import ConfigParser
+import configparser
 import glob
-import mad
 import subprocess
 from optparse import OptionParser
-import tools.Pipeline
-from models.dbhandler import PrioritizedScheduleDatabaseHandler
-from models.Schedule import *
-from models.Scheduler import *
-from models.Repetition import *
-from models.MetronomeSetup import *
-from models.IniSerializator import *
-from tools.Metronome import Metronome
-from tools.SightRead import SightRead
-from tools.Hook import run_hooks, wait_hooks
-from config.config import Config
+from mutagen.mp3 import MP3
+from .tools.Pipeline import *
+from .models.dbhandler import PrioritizedScheduleDatabaseHandler
+from .models.Schedule import *
+from .models.Scheduler import *
+from .models.Repetition import *
+from .models.MetronomeSetup import *
+from .models.IniSerializator import *
+from .tools.Metronome import Metronome
+from .tools.SightRead import SightRead
+from .tools.Hook import run_hooks, wait_hooks
+from .config.config import Config
 
 
 
@@ -48,7 +48,7 @@ class TextInterface(object):
         '''Constructor'''
         self.config = Config(config_file)
         if self.config.is_new:
-            print "New config has been initialized. Verify settings: %s" % config_filename        
+            print("New config has been initialized. Verify settings: %s" % config_file)
             sys.exit(0)
 
     def init_dbhandler(self, database):
@@ -59,17 +59,17 @@ class TextInterface(object):
         phrases = self.dbh.get_phrases(orderby='id')
         for phrase in phrases:
             schedules = self.dbh.get_schedules_by_phrase_id(phrase.id, orderby='next_repetition')
-            print phrase.id, '\t', phrase.get_filename(path=False), "\t", phrase.get_short_description(), "\t", phrase.get_tagline(),
+            print(phrase.id, '\t', phrase.get_filename(path=False), "\t", phrase.get_short_description(), "\t", phrase.get_tagline(), end=' ')
             if schedules:
-                print "\t", schedules[-1].get_next_repetition()
+                print("\t", schedules[-1].get_next_repetition())
             else:
-                print
+                print()
 
     def play_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
         if not metronomes:
-            print "No metronome found for the given phrase!"
+            print("No metronome found for the given phrase!")
             return
         metronome = metronomes[0]
 
@@ -77,17 +77,17 @@ class TextInterface(object):
             sr = self.show_image(phrase, metronome)
 
         if phrase.get_comment():
-            print
-            print phrase.get_comment()
-            print
+            print()
+            print(phrase.get_comment())
+            print()
 
         pre_hooks = []
         context = create_context(phrase)
         if self.config.RUN_HOOKS == 'y':
-            pre_hooks = run_hooks('hooks.pre', context=context)
+            pre_hooks = run_hooks('muspractice/hooks.pre', context=context)
 
         if phrase.get_filename():
-            player = tools.Pipeline.Pipeline(self.config.AUDIOSINK)
+            player = Pipeline(self.config.AUDIOSINK)
 
             if phrase.get_filename().startswith(os.sep):  # absolute path given
                 media_file_path = phrase.get_filename()
@@ -98,7 +98,7 @@ class TextInterface(object):
                 sys.stderr.write("Media file not found: %s\n" % media_file_path)
                 return
             else:
-                print "Media file found: %s " % media_file_path
+                print("Media file found: %s " % media_file_path)
 
             uri = "file://%s" % os.path.expanduser(os.path.abspath(media_file_path))
             player.set_file(uri)
@@ -107,11 +107,11 @@ class TextInterface(object):
             # determine mp3 file length if no to_position is definied:
             to_position = phrase.get_to_position()
             if to_position == 0.0 and uri.lower().endswith('.mp3'):
-                mf = mad.MadFile(os.path.abspath(media_file_path))
-                to_position = (mf.total_time() / 1000.0) - 0.1
+                mp3 = MP3(os.path.abspath(media_file_path))
+                to_position = mp3.info.length - 0.1
             elif to_position < 0.0 and uri.lower().endswith('.mp3'):
-                mf = mad.MadFile(os.path.abspath(media_file_path))
-                to_position = (mf.total_time() / 1000.0) - (to_position * (-1))
+                mp3 = MP3(os.path.abspath(media_file_path))
+                to_position = mp3.info.length - (to_position * (-1))
             player.set_to_position(to_position)
 
             speed = phrase.get_speed()
@@ -128,7 +128,7 @@ class TextInterface(object):
             player.play()
             duration = 0
             repetition = 1
-            print "Duration: %d" % metronome.duration
+            print("Duration: %d" % metronome.duration)
             try:
                 while True:
                     position = player.get_position()
@@ -137,7 +137,7 @@ class TextInterface(object):
                     if position <= player.get_from_position() or position > player.get_to_position() or duration == 0:
                         if duration > metronome.duration:
                             break
-                        print "Repetition %d" % repetition
+                        print("Repetition %d" % repetition)
                         player.seek_simple(player.get_from_position())
                         repetition += 1
                     duration += 1
@@ -152,38 +152,38 @@ class TextInterface(object):
 
         post_hooks = []
         if self.config.RUN_HOOKS == 'y':
-            post_hooks = run_hooks('hooks.post', context=context)
+            post_hooks = run_hooks('muspractice/hooks.post', context=context)
             
     def show_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         if phrase:
-            print
-            print "Name: %s" % phrase.get_name()
-            print "File: %s" % phrase.get_filename()
+            print()
+            print("Name: %s" % phrase.get_name())
+            print("File: %s" % phrase.get_filename())
             if phrase.get_image():
-                print "Image: %s" % phrase.get_image()
+                print("Image: %s" % phrase.get_image())
             if phrase.get_tagline():
-                print "Tags: %s" % phrase.get_tagline()
-            print "From: %.2f" % phrase.get_from_position()
-            print "To: %.2f" % phrase.get_to_position()
-            print
-            print phrase.get_comment()
+                print("Tags: %s" % phrase.get_tagline())
+            print("From: %.2f" % phrase.get_from_position())
+            print("To: %.2f" % phrase.get_to_position())
+            print()
+            print(phrase.get_comment())
         else:
             "Phrase not found. Wrong id?"
         metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
         if metronomes:
             ms = metronomes[0]
-            print "Metronome: speed=%d; meter=%d; duration=%d; increment=%d" % (ms.speed, ms.meter, ms.duration, ms.increment)
+            print("Metronome: speed=%d; meter=%d; duration=%d; increment=%d" % (ms.speed, ms.meter, ms.duration, ms.increment))
 
     def reschedule_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         if not phrase:
-            print "No phrase found with the given id: %d" % phrase_id
+            print("No phrase found with the given id: %d" % phrase_id)
             return
         repetitions = self.dbh.get_repetitions_by_phrase_id(phrase_id)
         scheduler = Scheduler()
         while True:
-            user_input = raw_input("Enter new grade (0-5): ")
+            user_input = input("Enter new grade (0-5): ")
             try:
                 grade = int(user_input)
                 if grade in range(0,6):
@@ -201,10 +201,10 @@ class TextInterface(object):
         if past_schedules:
             for schedule in past_schedules:
                 if not self.dbh.remove_schedule(schedule):
-                    print "Failed to remove old schedule: %d" % (schedule.id)
+                    print("Failed to remove old schedule: %d" % (schedule.id))
 
         schedule = scheduler.get_new_schedule(phrase, grade, repetition_list=repetitions)
-        print "Next repetition: %s" % schedule.get_next_repetition()
+        print("Next repetition: %s" % schedule.get_next_repetition())
         self.dbh.insert_schedule(schedule)
 
         metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
@@ -213,7 +213,7 @@ class TextInterface(object):
             if ms.increment and ms.speed != 0:
                 ms.speed += ms.increment
             if not self.dbh.update_metronome_setup(ms):
-                print "Failed to update the metronome setup"
+                print("Failed to update the metronome setup")
 
     def show_todo_list(self):
         schedules = self.dbh.get_active_schedules(orderby="next_repetition")
@@ -221,7 +221,7 @@ class TextInterface(object):
         for schedule in schedules:
             phrase = self.dbh.get_phrase_by_id(schedule.get_phrase_id())
             if not phrase:
-                print "Inconsistent database!"
+                print("Inconsistent database!")
                 return
             if schedule.get_priority() is not None:
                 priority = "%.1f" % schedule.get_priority()
@@ -231,18 +231,18 @@ class TextInterface(object):
                 description = phrase.get_name()
                 if not description:
                     description = phrase.get_short_description()
-                print phrase.id, "\t", priority, "\t", phrase.get_filename(path=False), description, "\t", phrase.get_tagline()
+                print(phrase.id, "\t", priority, "\t", phrase.get_filename(path=False), description, "\t", phrase.get_tagline())
 
     def edit_phrase_inkscape(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         if not phrase.get_image():
-            print "The given phrase has no image"
+            print("The given phrase has no image")
             return False
 
         img_path = "%s%s" % (self.config.MUSIC_DIRECTORY, phrase.get_image())
         ann_path = "%s%s" % (self.config.MUSIC_DIRECTORY, phrase.get_annotated_image())
         if not os.path.exists(os.path.expanduser(img_path)):
-            print "Cannot find image: %s" % img_path
+            print("Cannot find image: %s" % img_path)
             return False
 
         path = img_path
@@ -258,7 +258,7 @@ class TextInterface(object):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         metronome_setups = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
         if not phrase and not metronome_setups:
-            print "No phrase or metronome found"
+            print("No phrase or metronome found")
             return False
         tempfile = '%sdata_%.2f.ini' % (self.config.TEMPORARY_DIRECTORY, time.time())
 
@@ -275,10 +275,10 @@ class TextInterface(object):
             metronome_setup = metronome_setups[0]
         pis = IniSerializator(tempfile, phrase=phrase, metronome_setup=metronome_setup)
         if not pis.write():
-            print "Unable to write temporary file: %s" % tempfile
+            print("Unable to write temporary file: %s" % tempfile)
             return
         if not 'EDITOR' in os.environ:
-            print "Can't find suitable editor. Set the EDITOR environment variable!"
+            print("Can't find suitable editor. Set the EDITOR environment variable!")
         else:
             os.system("%s %s" % (os.environ['EDITOR'], tempfile))
         updated_result = pis.read()
@@ -286,39 +286,39 @@ class TextInterface(object):
         updated_metronome_setup = updated_result['MetronomeSetup']
         if updated_phrase:
             if not self.dbh.update_phrase(updated_phrase):
-                print "Can't update the phrase"
+                print("Can't update the phrase")
             else:
-                print "Phrase updated"
+                print("Phrase updated")
         if updated_metronome_setup:
             if not self.dbh.update_metronome_setup(updated_metronome_setup):
-                print "Can't update the metronome setup"
+                print("Can't update the metronome setup")
             else:
-                print "Metronome setup updated"
+                print("Metronome setup updated")
         os.unlink(tempfile)
         return True
 
     def delete_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         if not phrase:
-            print "No phrase found with the given id: %d" % phrase_id
+            print("No phrase found with the given id: %d" % phrase_id)
             return
         if not self.dbh.remove_phrase(phrase):
-            print "Error occured while removing the phrase"
+            print("Error occured while removing the phrase")
         else:
-            print "Phrase removed: %s %s" % (phrase.get_filename(path=False), phrase.get_short_description())
+            print("Phrase removed: %s %s" % (phrase.get_filename(path=False), phrase.get_short_description()))
 
     def create_phrase(self):
         phrase = Phrase()
         phrase_id = self.dbh.insert_phrase(phrase)
         if not phrase_id:
-            print "Failed to add phrase to database"
+            print("Failed to add phrase to database")
             return
         schedule = Schedule()
         schedule.set_phrase_id(phrase_id)
         schedule.set_next_repetition(datetime.date.today())
         schedule_id = self.dbh.insert_schedule(schedule)
         if not schedule_id:
-            print "Failed to schedule the new phrase"
+            print("Failed to schedule the new phrase")
             return
         metronome_setup = MetronomeSetup()
         metronome_setup.phrase_id = phrase_id
@@ -328,28 +328,28 @@ class TextInterface(object):
         metronome_setup.increment = 2
         metronome_setup_id = self.dbh.insert_metronome_setup(metronome_setup)
         if not metronome_setup_id:
-            print "Failed to insert metronome setup"
+            print("Failed to insert metronome setup")
             return
         self.edit_phrase(phrase_id)
 
     def deactivate_phrase(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         if not phrase_id:
-            print "Failed to deactivate phrase: the given phrase is not found"
+            print("Failed to deactivate phrase: the given phrase is not found")
             return
 
         past_schedules = self.dbh.get_schedules_by_phrase_id(phrase_id)
         if past_schedules:
             for schedule in past_schedules:
                 if not self.dbh.remove_schedule(schedule):
-                    print "Failed to remove old schedule: %d" % (schedule.id)
+                    print("Failed to remove old schedule: %d" % (schedule.id))
 
         schedule = Schedule()
         schedule.set_phrase_id(phrase_id)
         schedule.set_next_repetition(datetime.date(1970, 1, 1))
         schedule_id = self.dbh.insert_schedule(schedule)
         if not schedule_id:
-            print "Failed to deactivate phrase id %d" % phrase_id
+            print("Failed to deactivate phrase id %d" % phrase_id)
             return
 
     def list_deactivated_phrases(self):
@@ -358,9 +358,9 @@ class TextInterface(object):
         for schedule in schedules:
             phrase = self.dbh.get_phrase_by_id(schedule.get_phrase_id())
             if not phrase:
-                print "Inconsistent database!"
+                print("Inconsistent database!")
                 return
-            print phrase.id, "\t", "DEACTIVATED", "\t", phrase.get_filename(path=False), phrase.get_short_description(), "\t", phrase.get_tagline(), '.'
+            print(phrase.id, "\t", "DEACTIVATED", "\t", phrase.get_filename(path=False), phrase.get_short_description(), "\t", phrase.get_tagline(), '.')
 
     def init_database(self):
         self.dbh.init_database()
@@ -376,21 +376,21 @@ class TextInterface(object):
             path = ann_path
         path = os.path.expanduser(path)
 
-        print "Displaying image: %s" % path
+        print("Displaying image: %s" % path)
         sr.filename = path
         sr.duration = ms.duration
         if not sr.start():
-            print "Could not show image!"
+            print("Could not show image!")
         return sr
             
     def play_metronome(self, phrase_id):
         phrase = self.dbh.get_phrase_by_id(phrase_id)
         if not phrase:
-            print "No phrase found with the given id: %d" % phrase_id
+            print("No phrase found with the given id: %d" % phrase_id)
             return
         metronomes = self.dbh.get_metronome_setups_by_phrase_id(phrase_id)
         if not metronomes:
-            print "No metronome found for the given phrase!"
+            print("No metronome found for the given phrase!")
             return
         ms = metronomes[0]
 
@@ -398,26 +398,26 @@ class TextInterface(object):
         m.set_meter(ms.meter)
         m.set_speed(ms.speed)
         m.set_jack_ports(self.config.JACK_PORTS)
-        print "Metronome tempo: %d; Meter: %s" % (ms.speed, ms.meter)
+        print("Metronome tempo: %d; Meter: %s" % (ms.speed, ms.meter))
         m.set_duration(ms.duration)
 
         if phrase.get_image():
             sr = self.show_image(phrase, ms)
 
         if phrase.get_comment():
-            print
-            print phrase.get_comment()
-            print
+            print()
+            print(phrase.get_comment())
+            print()
 
         pre_hooks = []
         context = create_context(phrase, metronome=ms)
         if self.config.RUN_HOOKS == 'y':
-            pre_hooks = run_hooks('hooks.pre', context=context)
+            pre_hooks = run_hooks('muspractice/hooks.pre', context=context)
             
         # if speed is 0, metronome won't be started
         if ms.speed != 0:
             if not m.start():
-                print "Could not start metronome!"
+                print("Could not start metronome!")
 
         try:
             time.sleep(ms.duration)
@@ -427,14 +427,14 @@ class TextInterface(object):
         # if speed is 0, metronome wasn't started and doesn't have to be stopped
         if ms.speed != 0:
             if not m.stop():
-                print "Could not stop metronome!"
+                print("Could not stop metronome!")
 
         if phrase.get_image():
             sr.stop()
 
         post_hooks = []
         if self.config.RUN_HOOKS == 'y':
-            post_hooks = run_hooks('hooks.post', context=context)
+            post_hooks = run_hooks('muspractice/hooks.post', context=context)
 
         wait_hooks(pre_hooks)
         wait_hooks(post_hooks)
@@ -443,13 +443,13 @@ class TextInterface(object):
         repetitions = self.dbh.get_repetitions()
         for repetition in repetitions:
             phrase = self.dbh.get_phrase_by_id(repetition.get_phrase_id())
-            print repetition.id, repetition.get_date(), "\t", repetition.get_grade(), "\t", phrase.id, "\t", phrase.get_filename(path=False), phrase.get_short_description(), ":::%s:::" % phrase.get_tagline()
+            print(repetition.id, repetition.get_date(), "\t", repetition.get_grade(), "\t", phrase.id, "\t", phrase.get_filename(path=False), phrase.get_short_description(), ":::%s:::" % phrase.get_tagline())
 
     def list_metronome_setups(self):
         metronome_setups = self.dbh.get_metronome_setups()
         for metronome_setup in metronome_setups:
             phrase = self.dbh.get_phrase_by_id(metronome_setup.phrase_id)
-            print metronome_setup.id, metronome_setup.speed, metronome_setup.meter, metronome_setup.duration, phrase.get_filename(path=False), phrase.get_short_description()
+            print(metronome_setup.id, metronome_setup.speed, metronome_setup.meter, metronome_setup.duration, phrase.get_filename(path=False), phrase.get_short_description())
 
     def bulk_add(self, directory, tagline):
         """
@@ -459,9 +459,9 @@ class TextInterface(object):
         """
         path = "%s%s" % (self.config.MUSIC_DIRECTORY, directory)
         exp_path = os.path.expanduser(path)
-        print "exp path", exp_path
+        print("exp path", exp_path)
         if not os.path.exists(os.path.expanduser(path)):
-            print "Could not find specified path: %s" % path
+            print("Could not find specified path: %s" % path)
             return
         self.dbh.bulk_add(directory, self.config, tagline)
 
@@ -582,7 +582,7 @@ def main():
         ti.list_metronome_setups()
     elif options.bulk_add:
         if options.bulk_add_tagline is None:
-            print "Use --tagline argument to specify tags for the items added in bulk!"
+            print("Use --tagline argument to specify tags for the items added in bulk!")
             sys.exit(1)
         ti.bulk_add(options.bulk_add, options.bulk_add_tagline)
     else:

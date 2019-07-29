@@ -25,7 +25,7 @@ class RemoteMachine(object):
             return False
         response = requests.get(self.server_url + "/test", timeout=self.timeout)
         if response.status_code != 200:
-            print response.text
+            print((response.text))
             raise RuntimeError('Reaper service running on %s, but the server returned an invalid response: %s' % (self.server_url,
                                                                                                                   response.status_code))
         return response.text == 'test ok'
@@ -34,7 +34,7 @@ class RemoteMachine(object):
         url = self.server_url + "/project_exists?project_id=%s" % project_id
         response = requests.get(url, timeout=self.timeout)
         if response.status_code != 200:
-            print response.text
+            print((response.text))
             raise RuntimeError('Incorrect response received from %s: %s' % (url, response.status_code))
         return response.text == 'true'
 
@@ -42,7 +42,7 @@ class RemoteMachine(object):
         url = self.server_url + "/create_project?project_id=%s" % project_id
         response = requests.get(url, timeout=self.timeout)
         if response.status_code != 200:
-            print response.text
+            print((response.text))
             raise RuntimeError('Incorrect response received from %s: %s' % (url, response.status_code))
         return response.text == 'ok'
 
@@ -50,7 +50,7 @@ class RemoteMachine(object):
         url = self.server_url + "/start?project_id=%s" % project_id
         response = requests.get(url, timeout=self.timeout)
         if response.status_code != 200:
-            print response.text
+            print((response.text))
             raise RuntimeError('Incorrect response received from %s: %s' % (url, response.status_code))
         return response.text == 'ok'
             
@@ -66,26 +66,26 @@ class ReaperProject(object):
             
 def main():
     if os.environ.get('MUSPRACTICE_REAPER_HOST') is None:
-        print 'Reaper host is not set (MUSPRACTICE_REAPER_HOST)'
+        print('Reaper host is not set (MUSPRACTICE_REAPER_HOST)')
         return
 
     ip_addr = os.environ['MUSPRACTICE_REAPER_HOST']
     rr = RemoteMachine(ip_addr)
 
     if not rr.is_reaper_service_running():
-        print "Reaper host is not online. Skipped"
+        print("Reaper host is not online. Skipped")
         sys.exit(1)
 
     rp = ReaperProject(os.environ.get('PHRASE_ID'))
     project_id = rp.get_project_id()
     if not rr.project_exists(project_id):
-        print "Project not found. Creating"
+        print("Project not found. Creating")
         if not rr.create_project(project_id):
-            print "Could not create Reaper project from template!"
+            print("Could not create Reaper project from template!")
             sys.exit(1)
 
     if not rr.start_project(project_id):
-        print "Could not start Reaper!"
+        print("Could not start Reaper!")
         sys.exit(1)
 
     with open('reaper.lock', 'w') as out:

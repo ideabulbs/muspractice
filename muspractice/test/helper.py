@@ -6,8 +6,8 @@
 @license: GNU GPL
 @contact: andrei@ideabulbs.com
 """
-from models.Schedule import Schedule
-from models.Phrase import Phrase
+from ..models.Schedule import Schedule
+from ..models.Phrase import Phrase
 import time
 
 

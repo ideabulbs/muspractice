@@ -1,14 +1,14 @@
 import sqlite3
-from models.dbhandler import DatabaseHandler
-from models.Schedule import Schedule
-from models.Scheduler import Scheduler
-from models.Repetition import Repetition
-from models.MetronomeSetup import *
-from config.config import Config
-from helper import Helper
+from ..models.dbhandler import DatabaseHandler
+from ..models.Schedule import Schedule
+from ..models.Scheduler import Scheduler
+from ..models.Repetition import Repetition
+from ..models.MetronomeSetup import *
+from ..config.config import Config
+from .helper import Helper
 import os
 import datetime
-from models.IniSerializator import *
+from ..models.IniSerializator import *
 
 class TestIniSerialize(Helper):
 
@@ -43,8 +43,8 @@ class TestIniSerialize(Helper):
         assert write_result
 
         edited = inis.read()
-        assert edited['Phrase'] != None
-        assert edited['MetronomeSetup'] != None
+        assert edited['Phrase'] is not None
+        assert edited['MetronomeSetup'] is not None
         assert edited['Phrase'] == phrase
         assert edited['MetronomeSetup'] == ms
 

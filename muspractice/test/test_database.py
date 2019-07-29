@@ -1,11 +1,11 @@
 import sqlite3
-from models.dbhandler import *
-from models.Schedule import *
-from models.Scheduler import *
-from models.Repetition import *
-from models.MetronomeSetup import *
-from config.config import Config
-from helper import Helper
+from ..models.dbhandler import *
+from ..models.Schedule import *
+from ..models.Scheduler import *
+from ..models.Repetition import *
+from ..models.MetronomeSetup import *
+from ..config.config import Config
+from ..test.helper import Helper
 import os
 import datetime
 
@@ -112,11 +112,12 @@ class TestDatabase(Helper, DatabaseTestBase):
 
         scheduler = Scheduler()
         schedule = scheduler.get_new_schedule(phrase, 5)  # using new grade
-        assert schedule != None
+        print(schedule)
+        assert schedule is not None
 
         # no previous repetitions => shall be repeated tomorrow
-        print schedule.get_next_repetition()
-        print datetime.date.today() + datetime.timedelta(days=2)
+        print((schedule.get_next_repetition()))
+        print((datetime.date.today() + datetime.timedelta(days=2)))
         assert datetime.date.today() + datetime.timedelta(days=1) <= schedule.get_next_repetition() <= datetime.date.today() + datetime.timedelta(days=3)
 
         # two previous repetitions
@@ -182,5 +183,5 @@ class TestPrioritizedScheduleDatabaseHandler(Helper, DatabaseTestBase):
 
         schedules = psh.get_active_schedules()
         for schedule in schedules:
-            print "%.2f\t%s" % (schedule.get_priority(), schedule.get_next_repetition())
+            print(("%.2f\t%s" % (schedule.get_priority(), schedule.get_next_repetition())))
         assert schedules[0].get_priority() > schedules[1].get_priority() > schedules[2].get_priority() > schedules[3].get_priority() > schedules[4].get_priority()

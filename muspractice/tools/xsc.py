@@ -1,6 +1,6 @@
 import os
 import math
-import mad
+from mutagen.mp3 import MP3
 
 class SectionMarker(object):
     def __init__(self):
@@ -23,8 +23,8 @@ class Section(object):
         return self.end_pos - self.start_pos
 
     def get_sound_file_length(self):
-        mf = mad.MadFile(os.path.abspath(self.source_filename))
-        return mf.total_time() / 1000.0
+        mp3 = MP3(os.path.abspath(self.source_filename))
+        return mp3.info.length
     
     def get_timestamp_str(self, timestamp):
         minutes = int(timestamp / 60)
@@ -78,8 +78,9 @@ class XSCReader(object):
         return int(hours) * 3600 + int(minutes) * 60 + float(seconds)
 
     def get_sound_file_length(self):
-        mf = mad.MadFile(os.path.abspath(self.get_sound_filename()))
-        return mf.total_time() / 1000.0
+        filename = self.get_sound_filename()
+        mp3 = MP3(os.path.abspath(filename))
+        return mp3.info.length
 
     def read_section_markers(self):
         section_part_open = False

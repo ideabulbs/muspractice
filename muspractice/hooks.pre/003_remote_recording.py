@@ -21,8 +21,8 @@ class RemoteMachine(object):
         popen = subprocess.Popen(['ssh', '%s@%s' % (self.user, self.ip_addr), cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = popen.communicate()
         if popen.returncode != 0:
-            print stdout
-            print stderr
+            print(stdout)
+            print(stderr)
             raise RuntimeError("Could not get output from the host")
         return stdout, stderr, popen.returncode
 
@@ -99,7 +99,7 @@ def main():
     ip_addr= os.environ['MUSPRACTICE_REMOTE_RECORDER_HOST']
     rr = RemoteRecorder(user, ip_addr)
     if not rr.is_online():
-        print 'Recording host is not online. Recording skipped'
+        print('Recording host is not online. Recording skipped')
         sys.exit(1)
 
     ports = rr.get_recording_ports()

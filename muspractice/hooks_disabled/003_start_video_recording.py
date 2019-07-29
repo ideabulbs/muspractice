@@ -25,7 +25,7 @@ def main():
     recording_id = recordings[0].attributes['recordingid'].value
     with open('video.rec_id', 'w') as out:
         out.write(recording_id)
-    print "Video recording started: %s" % recording_id
+    print(("Video recording started: %s" % recording_id))
 
 if __name__ == '__main__':
     main()

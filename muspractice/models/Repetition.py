@@ -35,7 +35,7 @@ class Repetition(object):
 	def get_speed(self):
 		return self._speed
 	def set_date(self, date):
-		if isinstance(date, str) or isinstance(date, unicode):
+		if isinstance(date, str) or isinstance(date, str):
 			time_tuple = time.strptime(date,"%Y-%m-%d")[:3]
 			date = datetime.date(time_tuple[0], time_tuple[1], time_tuple[2])
 		self._date = date

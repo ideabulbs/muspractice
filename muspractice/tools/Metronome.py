@@ -21,10 +21,10 @@ class Metronome(object):
             popen = subprocess.Popen(['jack_lsp'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = popen.communicate()
             if wait_open:
-                if self.jack_port_name in stdout:
+                if self.jack_port_name in stdout.decode('ascii'):
                     return True
             else:
-                if not self.jack_port_name in stdout:
+                if not self.jack_port_name in stdout.decode('ascii'):
                     return True
             time.sleep(1)
         return False

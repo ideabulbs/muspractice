@@ -1,4 +1,4 @@
-from Serializable import *
+from .Serializable import *
 
 class MetronomeSetup(Serializable):
     phrase_id = 0

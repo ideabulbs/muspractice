@@ -1,6 +1,6 @@
 import subprocess
 import os
-from test_functional import FunctionalBase
+from .test_functional import FunctionalBase
 
 class TestTagWeights(FunctionalBase):
 
@@ -35,9 +35,11 @@ class TestTagWeights(FunctionalBase):
         FunctionalBase.teardown(self)
 
     def test_tag_weights(self):
-        cmd = './tag_weights -C %s -c %s' % (self.config_file, self.tag_weights_file)        
+        cmd = 'python muspractice/tag_weights -C %s -c %s' % (self.config_file, self.tag_weights_file)        
         popen = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = popen.communicate()
+        print(stdout)
+        print(stderr)
         assert popen.returncode == 0
         assert len(stderr) == 0
 
@@ -45,7 +47,7 @@ class TestTagWeights(FunctionalBase):
         assert len(stdout) == 2
 
         data_line = stdout[1].strip()
-        tokens = data_line.split('  ')
+        tokens = data_line.decode('ascii').split('  ')
         assert len(tokens) == 3
 
         for token in tokens:
@@ -53,9 +55,11 @@ class TestTagWeights(FunctionalBase):
             assert int(reps) <= 0
 
     def test_tag_weights_invalid_config(self):
-        cmd = './tag_weights -C %s -c .muspractice_tag_weights_non_existent' % (self.config_file)
+        cmd = 'python muspractice/tag_weights -C %s -c .muspractice_tag_weights_non_existent' % (self.config_file)
         popen = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = popen.communicate()
+        print(stdout)
+        print(stderr)
         assert popen.returncode == 1
-        assert 'Could not find tag weight config' in stderr
+        assert 'Could not find tag weight config' in stderr.decode('ascii')
         assert len(stdout) == 0

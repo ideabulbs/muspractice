@@ -10,7 +10,7 @@ app = Flask(__name__)
 PROJECTS_DIR = sys.argv[1]  #"c:\\shared\\local_sync\\tmp\\test_reaper"
 if not os.path.exists(PROJECTS_DIR) or not os.path.isdir(PROJECTS_DIR):
     raise RuntimeError("Invalid projects directory: %s" % PROJECTS_DIR)
-print "Using project directory: %s" % PROJECTS_DIR
+print("Using project directory: %s" % PROJECTS_DIR)
 
 @app.route("/start", methods=['GET'])
 def start_app():

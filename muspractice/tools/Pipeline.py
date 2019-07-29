@@ -2,7 +2,6 @@ import sys
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject
-import mad
 import re
 import os
 
@@ -46,7 +45,7 @@ class PipelineBase(Gst.Pipeline):
         if t == Gst.MESSAGE_EOS:
             self.eos()
         elif t == Gst.MESSAGE_ERROR:
-            mygtk.show_error("Gstreamer error: %s - %s" % message.parse_error())
+            print("Gstreamer error: %s - %s" % message.parse_error())
 
     def set_volume(self, volume):
         self.playbin.set_property("volume", volume)
@@ -127,21 +126,21 @@ class Pipeline(PipelineBase):
         self._to_position = 0
 
     def get_duration(self):
-	try:
-	    _, duration = self.playbin.query_duration(TIME_FORMAT)
-	    duration = self.song_time(duration)
-	    return duration
-	except Exception as e:
-	    sys.stderr.write("GST QUERY ERROR: %s\n" % e)
-	    return None
+        try:
+            _, duration = self.playbin.query_duration(TIME_FORMAT)
+            duration = self.song_time(duration)
+            return duration
+        except Exception as e:
+            sys.stderr.write("GST QUERY ERROR: %s\n" % e)
+            return None
 
     def get_position(self):
-	try:
-	    _, position = self.playbin.query_position(TIME_FORMAT)
-	    position = self.song_time(position)
-	    return position
-	except Exception:
-	    return None
+        try:
+            _, position = self.playbin.query_position(TIME_FORMAT)
+            position = self.song_time(position)
+            return position
+        except Exception:
+            return None
 
     def get_from_position(self):
         return self._from_position
@@ -170,10 +169,10 @@ class Pipeline(PipelineBase):
         self._paused = True
 
     def is_paused(self):
-	return self._paused
+        return self._paused
 
     def is_playing(self):
-	return not self.is_paused()
+        return not self.is_paused()
 
     def seek_simple(self, pos=0):
         pos = self.pipe_time(pos)
@@ -185,19 +184,19 @@ if __name__ == "__main__":
     pl.reset()
     path = 'file://%stest/data/music.mp3' % os.getcwd()
     path = 'file:///home/user/shared/repmusic/rock/burn.mp3'
-    print "Playing", path
+    print("Playing", path)
     pl.set_file(path)
     pl.play()
     time.sleep(2)
-    print 'Position', pl.get_position()
-    print 'Playing for 2 seconds', pl.is_playing()
+    print('Position', pl.get_position())
+    print('Playing for 2 seconds', pl.is_playing())
     time.sleep(2)
-    print 'Position', pl.get_position()
-    print 'pausing for 2 seconds'
+    print('Position', pl.get_position())
+    print('pausing for 2 seconds')
     pl.pause()
     time.sleep(2)
-    print 'Position', pl.get_position()
+    print('Position', pl.get_position())
     pl.play()
     time.sleep(10)
-    print 'Position', pl.get_position()
+    print('Position', pl.get_position())
     pl.pause()

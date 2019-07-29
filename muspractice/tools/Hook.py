@@ -6,14 +6,14 @@ import time
 
 def run_hooks(hook_dir, context=None):
     if context:
-        for key, value in context.iteritems():
+        for key, value in context.items():
             os.environ[key] = str(value)
             
     pre_hook_files = glob.glob('%s/[0-9]*.py' % hook_dir)
     pre_hook_files.sort()
     hooks = []
     for hook_file in pre_hook_files:
-        print "Starting hook", hook_file
+        print("Starting hook", hook_file)
         hook = Hook(hook_file)
         hooks.append(hook)
         result = hook.start()

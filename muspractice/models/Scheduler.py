@@ -1,5 +1,5 @@
-from models.Repetition import *
-from models.Schedule import *
+from .Repetition import *
+from .Schedule import *
 import random
 
 class Scheduler(object):

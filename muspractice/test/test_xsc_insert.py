@@ -1,12 +1,12 @@
 import time
 import os
-from tools.xsc import XSCReader
+from ..tools.xsc import XSCReader
 
 
 class TestXSCReader(object):
 
     def test_read_sections(self):
-        xr = XSCReader('test/data/segmented_audio_file.xsc')
+        xr = XSCReader('muspractice/test/data/segmented_audio_file.xsc')
         assert len(xr.get_sections()) == 10
 
         ignored_sections = 0
@@ -24,7 +24,7 @@ class TestXSCReader(object):
         assert last_section.end_pos == 7.082
 
     def test_section(object):
-        xr = XSCReader('test/data/segmented_audio_file.xsc')
+        xr = XSCReader('muspractice/test/data/segmented_audio_file.xsc')
         sections = xr.get_sections()
         last_section = sections[-1]
 

@@ -1,12 +1,12 @@
 import time
 import os
 import subprocess
-from tools.Pipeline import Pipeline
+from ..tools.Pipeline import Pipeline
 
 
 class TestPipeline(object):
 
-    mp3_file = '%s/test/data/music.mp3' % os.getcwd()
+    mp3_file = '%s/muspractice/test/data/music.mp3' % os.getcwd()
     sink = 'jackaudiosink'
 
     def test_gstreamer_decoder(self):
@@ -14,7 +14,8 @@ class TestPipeline(object):
         popen = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         stdout, _ = popen.communicate()
         # check if fluendo gstreamer plugin is installed
-        assert 'flump3dec:' in stdout
+        print(stdout)
+        assert 'flump3dec:' in stdout.decode('ascii')
     
     def test_pipeline_play(self):
         pl = Pipeline(self.sink)

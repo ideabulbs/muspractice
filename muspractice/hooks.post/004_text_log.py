@@ -10,13 +10,13 @@ def cleanup():
 def main():
     log_temp_file = 'text_log.dat'
     if not os.path.exists(log_temp_file):
-        print "No text log entry from pre-hook found"
+        print("No text log entry from pre-hook found")
         sys.exit(1)
     data = open(log_temp_file, 'r').read()
     start_timestamp = int(data.strip())
     duration = int(time.time() - start_timestamp)
     if duration < 130:
-        print "Repetition too short. Skipping text logging..."
+        print("Repetition too short. Skipping text logging...")
         cleanup()
         sys.exit(1)
 
@@ -33,10 +33,10 @@ def main():
         tokens.append('None')
         
     log_string = '\t'.join(tokens)
-    print log_string
+    print(log_string)
 
     log_output_file = os.environ['MUSPRACTICE_RECORDING_ARCHIVE'] + '/repetitions.list'
-    print log_output_file
+    print(log_output_file)
     with open(log_output_file, 'a') as out:
         out.write(log_string + os.linesep)
     cleanup()

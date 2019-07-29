@@ -11,15 +11,15 @@ import re
 def get_file():
     data_file = 'remote_recording.dat'
     if not os.path.exists(data_file):
-        print "No data file found from remote recording pre-hook"
+        print("No data file found from remote recording pre-hook")
         sys.exit(1)
         
     pid, remote_machine, filename = open(data_file, 'r').read().split()
-    print "Stopping remote recording in process %s" % pid
+    print(("Stopping remote recording in process %s" % pid))
     try:
         os.kill(int(pid), signal.SIGINT)
     except OSError:
-        print "Process %s already finished?" % pid
+        print(("Process %s already finished?" % pid))
 
     local_filename = 'recording.ogg'
     popen = subprocess.Popen(['scp', remote_machine + ':' +filename, local_filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -44,8 +44,8 @@ def get_duration(filename):
     popen = subprocess.Popen(['ogginfo', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = popen.communicate()
     if popen.returncode != 0:
-        print stdout
-        print stderr
+        print(stdout)
+        print(stderr)
         raise RuntimeError('Could not get ogg file data with ogginfo: ogginfo %s' % filename)
     length_line = ""
     for line in stdout.splitlines():
@@ -53,8 +53,8 @@ def get_duration(filename):
             length_line = line.strip()
             break
     else:
-        print stdout
-        print stderr
+        print(stdout)
+        print(stderr)
         raise RuntimeError('Could not read file metadata with ogginfo: ogginfo %s' % filename)
     tokens = length_line.split('length: ')
     duration = tokens[1]
@@ -97,7 +97,7 @@ def main():
     filename = get_file()
     duration = get_duration(filename)
     if duration < 130:
-        print "Remote recording too short (%.2f seconds). Removing..." % duration
+        print(("Remote recording too short (%.2f seconds). Removing..." % duration))
         os.unlink(filename)
     else:
         set_metadata(filename)

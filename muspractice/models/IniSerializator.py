@@ -1,12 +1,12 @@
-import ConfigParser
-from models.Phrase import *
-from models.MetronomeSetup import *
+import configparser
+from .Phrase import *
+from .MetronomeSetup import *
 
 class AbstractIniSerializator(object):
 
     def __init__(self, filename):
         self._filename = filename
-        self._cfp = ConfigParser.RawConfigParser()
+        self._cfp = configparser.RawConfigParser()
 
 class MetronomeSetupIniserializator(AbstractIniSerializator):
 
@@ -95,7 +95,7 @@ class IniSerializator(PhraseIniSerializator, MetronomeSetupIniserializator, Abst
         if self._metronome_setup:
             self.set_metronome_setup(self._metronome_setup)
 
-        with open(self._filename, 'wb') as config:
+        with open(self._filename, 'w') as config:
             self._cfp.write(config)
         return True
 

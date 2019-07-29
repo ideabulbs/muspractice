@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 import os
 import sys
 
@@ -11,9 +11,9 @@ class Config(object):
             config_file = self.get_config_filename()
 
         self.config_file = os.path.expanduser(config_file)
-        self._cfp = ConfigParser.RawConfigParser()
+        self._cfp = configparser.RawConfigParser()
         if not os.path.exists(self.config_file):
-            print "Config file %s not found. Initializing new configuration..." % self.config_file
+            print(("Config file %s not found. Initializing new configuration..." % self.config_file))
             if not self._init_config():
                 raise RuntimeError("Could not initialize config file: %s" % self.config_file)
             self.is_new = True
@@ -80,8 +80,8 @@ class Config(object):
     def JACK_PORTS(self):
         try:
             ports_str = self._cfp.get('General', 'jack_ports')
-        except ConfigParser.NoOptionError:
-            print "Parameter 'jack_ports' is not set in the config file!"
+        except configparser.NoOptionError:
+            print("Parameter 'jack_ports' is not set in the config file!")
             sys.exit(1)
         ports = []
         for item in ports_str.split(','):
