@@ -37,7 +37,7 @@ class SightRead(object):
                 self.wait()
                 self._main_thread.stop()
                                 
-        command = "qiv %s" % (self.filename)
+        command = "qiv -R %s" % (self.filename)  # -R for read-only files, no deletion to .qiv-trash
         self._is_playing = True
         if self.duration:
             self._popen = subprocess.Popen(command.split(), shell=False,

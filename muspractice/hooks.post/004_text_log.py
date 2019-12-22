@@ -15,7 +15,7 @@ def main():
     data = open(log_temp_file, 'r').read()
     start_timestamp = int(data.strip())
     duration = int(time.time() - start_timestamp)
-    if duration < 130:
+    if duration < 60:
         print("Repetition too short. Skipping text logging...")
         cleanup()
         sys.exit(1)
