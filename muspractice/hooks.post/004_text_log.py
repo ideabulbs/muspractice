@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import sys
 import time
@@ -35,7 +35,7 @@ def main():
     log_string = '\t'.join(tokens)
     print(log_string)
 
-    log_output_file = os.environ['MUSPRACTICE_RECORDING_ARCHIVE'] + '/repetitions.list'
+    log_output_file = os.environ['HOME'] + "/repmusic" + '/repetitions.list'
     print(log_output_file)
     with open(log_output_file, 'a') as out:
         out.write(log_string + os.linesep)
